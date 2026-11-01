@@ -193,13 +193,32 @@ Destinés à l'usage avec un téléprompteur physique (lecture à travers une vi
 - À la réouverture d'un prompt dont la lecture avait été interrompue, proposer : « Reprendre là où vous vous étiez arrêté » ou « Recommencer au début ».
 
 ### F26 — Confidentialité
-- Toutes les données (prompts, préférences, enregistrements) restent **sur l'appareil de l'utilisateur**. Aucun compte, aucune synchronisation en ligne dans cette version.
-- L'application fonctionne sans connexion internet.
+- Par défaut, toutes les données (prompts, préférences, enregistrements) restent **sur l'appareil de l'utilisateur**. L'application n'a pas de compte utilisateur propre.
+- Les données ne quittent l'appareil que sur **action explicite** : export de fichier (F24), création d'un lien de partage (F28), enregistrement dans Google Drive (F29).
+- L'application fonctionne sans connexion internet (seules les fonctions Google Drive la nécessitent).
 
 ### F27 — Paramètres par défaut
 - Un écran **Préférences** permet de définir les paramètres appliqués à tout nouveau prompt (unité de vitesse — mots/minute par défaut —, vitesse, taille, couleurs, etc.).
 - Action **« Définir comme paramètres par défaut »** depuis un prompt existant.
 - Action **« Réinitialiser les paramètres »** d'un prompt aux valeurs par défaut.
+
+### F28 — Lien de partage contenant le prompt — P1
+- Action **« Copier le lien »** (éditeur et bibliothèque) : génère une adresse de l'application qui **contient le prompt lui-même** (titre, texte et paramètres, sous forme compressée), et la copie dans le presse-papiers (ou ouvre le partage natif sur mobile).
+- Ouvrir ce lien charge le prompt dans l'éditeur, avec ses paramètres, comme un prompt **non enregistré** ; l'utilisateur l'enregistre dans sa bibliothèque s'il le souhaite.
+- Si l'éditeur contient des modifications non enregistrées, une confirmation est demandée avant de les remplacer.
+- Une fois le prompt chargé, l'adresse affichée est nettoyée (le rechargement de la page ne recharge pas le lien).
+- Lien trop long (texte volumineux) : avertissement indiquant que certaines messageries peuvent le tronquer, et proposition d'utiliser Google Drive (F29) ou l'export (F24). Au-delà d'une taille maximale, le lien n'est pas généré.
+- Lien invalide ou corrompu : message d'erreur, l'éditeur reste inchangé.
+- Le contenu du lien n'est pas transmis au serveur qui héberge l'application ; en revanche, toute personne disposant du lien peut lire le texte.
+
+### F29 — Google Drive — P2
+- **Connexion** : bouton « Se connecter à Google Drive » ; l'application n'accède qu'aux fichiers qu'elle a créés ou que l'utilisateur lui a explicitement ouverts. Déconnexion possible à tout moment depuis les Préférences.
+- **Enregistrer dans Drive** : action explicite (pas d'envoi automatique) depuis l'éditeur ou la bibliothèque. Le prompt (titre, texte, paramètres) est enregistré dans un fichier d'un dossier « Téléprompteur » du Drive de l'utilisateur ; les envois suivants mettent à jour le même fichier. Le prompt est aussi enregistré dans la bibliothèque locale.
+- **Ouvrir depuis Drive** : liste des prompts enregistrés par l'application dans le Drive de l'utilisateur, et sélecteur de fichiers Google pour ouvrir un fichier partagé par quelqu'un d'autre.
+- **Lien Drive** : action « Copier le lien Drive » qui produit une adresse de l'application désignant le fichier Drive. Ouvrir cette adresse charge le prompt depuis Drive (après connexion à Google si le fichier n'est pas public), selon les mêmes règles que F28. Option « Rendre accessible à toute personne disposant du lien », avec confirmation.
+- **Indicateurs** : dans la bibliothèque, un pictogramme signale les prompts liés à un fichier Drive, et l'état « modifié depuis le dernier envoi sur Drive ».
+- **Conflit** : si le fichier Drive a été modifié ailleurs depuis le dernier envoi, l'utilisateur choisit entre écraser la version Drive, charger la version Drive ou annuler.
+- Hors connexion, les actions Drive sont désactivées avec une explication.
 
 ---
 
@@ -333,6 +352,11 @@ Tout autre élément Markdown (liens, images, tableaux, code…) est affiché co
 1. Sur l'appareil A : « Mes prompts » → Exporter tout → fichier.
 2. Sur l'appareil B : Importer → les prompts et leurs paramètres sont restaurés.
 
+### P6 — Partager un prompt par lien
+1. Dans l'éditeur, l'utilisateur clique sur « Copier le lien » et envoie le lien à un intervenant.
+2. L'intervenant ouvre le lien sur sa tablette : l'application s'ouvre avec le texte et les paramètres ; il lance la lecture ou enregistre le prompt dans sa bibliothèque.
+3. Pour un texte long, l'utilisateur enregistre le prompt dans Google Drive, rend le fichier accessible par lien et partage le « lien Drive ».
+
 ---
 
 ## 9. Récapitulatif des paramètres d'un prompt
@@ -358,7 +382,7 @@ Tout autre élément Markdown (liens, images, tableaux, code…) est affiché co
 
 ## 10. Hors périmètre (pour cette version)
 
-- Comptes utilisateurs, synchronisation en ligne, partage de prompts entre utilisateurs.
+- Comptes utilisateurs propres à l'application, synchronisation automatique entre appareils, édition collaborative (le partage se limite aux liens F28/F29 et aux fichiers F24).
 - Enregistrement automatique des prompts dans la bibliothèque (seul le brouillon est conservé, cf. F23).
 - Conservation des enregistrements audio dans l'application : ils sont uniquement proposés au téléchargement (cf. F10 ; F50 reste une idée).
 - Choix techniques (seront traités dans la spec technique) : type d'application (web locale, PWA, application de bureau), mode de stockage, format du fichier d'export, formats audio.
@@ -377,3 +401,5 @@ Tout autre élément Markdown (liens, images, tableaux, code…) est affiché co
 | D6 | Priorités | Inchangées. | — |
 | D7 | Vitesse par défaut | 140 mots/min, plage 60–250 mots/min (pas de 5). | F5 |
 | D8 | Sous-ensemble Markdown | Gras, italique, surlignage, titres, séparateur, listes ; tout le reste affiché en texte brut. | F56 |
+| D9 | Restauration par URL | Chargement d'un prompt via un lien contenant le prompt compressé, ou via un lien vers un fichier Google Drive. | F28, F29 |
+| D10 | Google Drive | Enregistrement et ouverture de prompts dans Google Drive, sur action explicite. | F29, F26 |
