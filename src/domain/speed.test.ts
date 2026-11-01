@@ -61,3 +61,36 @@ describe('durée', () => {
     expect(formatDuration(-3)).toBe('00:00');
   });
 });
+
+describe('durée cible (F44)', () => {
+  it('lit les durées saisies', async () => {
+    const { parseDuration } = await import('./duration');
+    expect(parseDuration('3')).toBe(180);
+    expect(parseDuration('2,5')).toBe(150);
+    expect(parseDuration('2:30')).toBe(150);
+    expect(parseDuration('1:02:00')).toBe(3720);
+    expect(parseDuration('2 min 30')).toBe(150);
+    expect(parseDuration('90s')).toBe(90);
+    expect(parseDuration('n’importe quoi')).toBeNull();
+    expect(parseDuration('')).toBeNull();
+  });
+
+  it('propose la vitesse correspondante', async () => {
+    const { speedForTarget } = await import('./speed');
+    expect(speedForTarget('wpm', 120, 0, 300)).toEqual({
+      speed: { unit: 'wpm', value: 150 },
+      exact: 150,
+      clamped: false,
+    });
+    expect(speedForTarget('pxps', 100, 5000, 0)?.speed).toEqual({ unit: 'pxps', value: 52 });
+    expect(speedForTarget('wpm', 10, 0, 300)?.clamped).toBe(true);
+    expect(speedForTarget('wpm', 60, 0, 0)).toBeNull();
+  });
+
+  it('formate un écart signé', async () => {
+    const { formatGap } = await import('./duration');
+    expect(formatGap(12)).toBe('+00:12');
+    expect(formatGap(-65)).toBe('−01:05');
+    expect(formatGap(0)).toBe('±00:00');
+  });
+});

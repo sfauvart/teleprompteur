@@ -1,7 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { EditorState } from '@codemirror/state';
-import { EditorView, keymap, placeholder as placeholderExtension } from '@codemirror/view';
+import {
+  Decoration,
+  EditorView,
+  MatchDecorator,
+  ViewPlugin,
+  keymap,
+  placeholder as placeholderExtension,
+  type DecorationSet,
+  type ViewUpdate,
+} from '@codemirror/view';
 
 interface CodeEditorProps {
   value: string;
@@ -11,6 +20,25 @@ interface CodeEditorProps {
   onSave(): void;
   ariaLabel: string;
 }
+
+/** Indications scéniques `[…]` (F43) colorées dans l'éditeur comme dans le prompteur. */
+const stageMatcher = new MatchDecorator({
+  regexp: /\[[^\]\n]*\]/g,
+  decoration: Decoration.mark({ class: 'cm-stage' }),
+});
+
+const stageDirections = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = stageMatcher.createDeco(view);
+    }
+    update(update: ViewUpdate) {
+      this.decorations = stageMatcher.updateDeco(update, this.decorations);
+    }
+  },
+  { decorations: (plugin) => plugin.decorations },
+);
 
 const theme = EditorView.theme(
   {
@@ -26,6 +54,7 @@ const theme = EditorView.theme(
     '&.cm-focused': { outline: '2px solid var(--accent)', outlineOffset: '-2px' },
     '.cm-placeholder': { color: 'var(--muted)' },
     '.cm-cursor': { borderLeftColor: 'var(--accent)' },
+    '.cm-stage': { color: 'var(--stage)' },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
       backgroundColor: 'var(--selection)',
     },
@@ -79,6 +108,7 @@ export function CodeEditor({
             if (update.docChanged) callbacks.current.onChange(update.state.doc.toString());
           }),
           theme,
+          stageDirections,
           EditorView.cspNonce.of(__CSP_NONCE__),
         ],
       }),

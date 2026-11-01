@@ -6,6 +6,7 @@ import { fr } from '../i18n/fr';
 import { isDirty, useSession } from '../stores/sessionStore';
 import { DialogHost } from '../ui/DialogHost';
 import { ToastHost } from '../ui/ToastHost';
+import { DriveBrowser } from '../features/drive/DriveBrowser';
 import { navigate, useRoute, type Route } from './router';
 
 const NAV: { route: Route; label: string }[] = [
@@ -66,6 +67,7 @@ export function App() {
         </>
       )}
       {prompter && <PrompterScreen />}
+      <DriveBrowser />
       <DialogHost />
       <ToastHost />
     </>

@@ -84,3 +84,24 @@ describe('sessionStore', () => {
     expect(session().draft.settings.speed).toEqual({ unit: 'pxps', value: 60 });
   });
 });
+
+describe('lien Google Drive', () => {
+  it('est conservé à l’enregistrement et signale les modifications', async () => {
+    const { driveContentHash, isModifiedSinceDrive } = await import('../app/driveActions');
+    session().setText('Bonjour');
+    await session().save({ title: 'T' });
+    const { draft } = session();
+    await session().setDriveLink({
+      fileId: 'f1',
+      modifiedTime: 't1',
+      contentHash: driveContentHash(draft),
+      canEdit: true,
+    });
+    expect(isModifiedSinceDrive(session().draft)).toBe(false);
+    expect((await getPrompt(draft.promptId!))?.drive?.fileId).toBe('f1');
+    session().setText('Bonjour modifié');
+    expect(isModifiedSinceDrive(session().draft)).toBe(true);
+    await session().save();
+    expect((await getPrompt(draft.promptId!))?.drive?.fileId).toBe('f1');
+  });
+});

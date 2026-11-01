@@ -17,6 +17,10 @@ import { normalizeSettings } from '../../domain/settings';
 import { useSession } from '../../stores/sessionStore';
 import { askText, choose, toast } from '../../ui/feedback';
 import { MoreIcon, PlayIcon } from '../../ui/icons';
+import { browseDrive, saveToDrive } from '../../app/driveActions';
+import { getAccessToken } from '../../services/google/auth';
+import { isDriveConfigured } from '../../services/google/config';
+import { DriveBadge } from '../drive/DriveBadge';
 
 type SortKey = 'updated' | 'used' | 'title' | 'duration';
 
@@ -70,6 +74,11 @@ export function LibraryScreen() {
           >
             {fr.library.exportAll}
           </button>
+          {isDriveConfigured() && (
+            <button type="button" className="btn" onClick={() => void browseDrive()}>
+              {fr.drive.open}
+            </button>
+          )}
         </div>
       </div>
 
@@ -166,6 +175,7 @@ function PromptCard({ prompt, current }: { prompt: Prompt; current: boolean }) {
             {prompt.title}
           </button>
           {current && <span className="badge">{fr.library.current}</span>}
+          <DriveBadge prompt={prompt} />
         </h2>
         <p className="excerpt">{excerpt(prompt.text)}</p>
         <p className="meta">
@@ -224,6 +234,24 @@ function PromptCard({ prompt, current }: { prompt: Prompt; current: boolean }) {
               >
                 {fr.library.copyLink}
               </button>
+              {isDriveConfigured() && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    // Demande de jeton lancée dès le clic (fenêtre Google non bloquée).
+                    const token = getAccessToken();
+                    token.catch(() => undefined);
+                    void openPrompt(prompt, 'editor').then(() => {
+                      if (useSession.getState().draft.promptId === prompt.id)
+                        void saveToDrive(token);
+                    });
+                  }}
+                >
+                  {fr.drive.save}
+                </button>
+              )}
               <button type="button" role="menuitem" className="danger" onClick={run(remove)}>
                 {fr.common.delete}
               </button>

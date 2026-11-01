@@ -23,6 +23,7 @@ import { listPrompts, putPrompts } from '../storage/promptsRepo';
 import type { Prompt } from '../storage/types';
 import { isDirty, useSession } from '../stores/sessionStore';
 import { askText, choose, toast } from '../ui/feedback';
+import { openDriveLink } from './driveActions';
 import { navigate } from './router';
 
 /** Enregistre le prompt courant (titre demandé au premier enregistrement, conflit géré). */
@@ -135,8 +136,7 @@ export async function handleRestoreFragment(fragment: RestoreFragment): Promise<
     return;
   }
   if (fragment.kind === 'gdrive') {
-    // F29 (P2) : non implémenté.
-    toast(fr.share.driveUnavailable, { tone: 'error' });
+    await openDriveLink(fragment.fileId);
     return;
   }
   let shared: SharedPrompt;

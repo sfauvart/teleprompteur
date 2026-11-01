@@ -14,6 +14,8 @@ import { toast } from '../../ui/feedback';
 import { NumberStepper } from '../../ui/NumberStepper';
 import { Switch } from '../../ui/Switch';
 import { SpeedIcon, TextSizeIcon } from '../../ui/icons';
+import { DisplaySettingsForm } from '../display/DisplaySettingsForm';
+import { DriveSettings } from '../drive/DriveSettings';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`;
@@ -152,6 +154,13 @@ export function PreferencesScreen() {
           </button>
         </div>
       </fieldset>
+
+      <fieldset className="panel">
+        <legend>{fr.display.title}</legend>
+        <DisplaySettingsForm settings={settings} onChange={update} />
+      </fieldset>
+
+      <DriveSettings />
 
       <section className="panel">
         <h2>{fr.preferences.storage}</h2>

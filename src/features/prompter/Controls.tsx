@@ -18,6 +18,7 @@ import {
   ExitFullscreenIcon,
   FullscreenIcon,
   HelpIcon,
+  PaletteIcon,
   MicIcon,
   MirrorIcon,
   InvertIcon,
@@ -48,7 +49,10 @@ interface ControlsProps {
   onFontSize(value: number): void;
   onSetting(patch: Partial<PromptSettings>): void;
   onHelp(): void;
+  onDisplay(): void;
   onClose(): void;
+  /** Compte à rebours en cours : le bouton Lecture l'annule. */
+  countdown: boolean;
 }
 
 /** Barre de contrôles du prompteur (spec fonctionnelle F4) ; menu secondaire sur petit écran. */
@@ -56,7 +60,7 @@ export function Controls(props: ControlsProps) {
   const { state, settings, recorder } = props;
   const [menuOpen, setMenuOpen] = useState(false);
   const recording = useSyncExternalStore(recorder.subscribe, recorder.isRecording);
-  const playing = state === 'playing';
+  const playing = state === 'playing' || props.countdown;
   const unit = settings.speed.unit;
   const otherUnit: SpeedUnit = unit === 'wpm' ? 'pxps' : 'wpm';
 
@@ -188,6 +192,15 @@ export function Controls(props: ControlsProps) {
             </>
           }
         />
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={props.onDisplay}
+          aria-label={fr.display.title}
+          title={fr.display.title}
+        >
+          <PaletteIcon />
+        </button>
         <button
           type="button"
           className="icon-btn"

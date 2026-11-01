@@ -43,3 +43,21 @@ export function stepSpeed(speed: Speed, direction: 1 | -1): Speed {
 export function speedUnitLabel(unit: SpeedUnit): string {
   return unit === 'wpm' ? 'mots/min' : 'px/s';
 }
+
+/**
+ * Vitesse permettant de lire le texte en `targetSec` secondes (F44), dans l'unité courante.
+ * `clamped` indique que la vitesse exacte sort de la plage autorisée.
+ */
+export function speedForTarget(
+  unit: Speed['unit'],
+  targetSec: number,
+  distance: number,
+  words: number,
+): { speed: Speed; exact: number; clamped: boolean } | null {
+  if (targetSec <= 0) return null;
+  const exact = unit === 'wpm' ? (words * 60) / targetSec : distance / targetSec;
+  if (!(exact > 0)) return null;
+  const value = clampSpeed(unit, exact);
+  const { min, max } = SPEED_LIMITS[unit];
+  return { speed: { unit, value }, exact, clamped: exact < min || exact > max };
+}

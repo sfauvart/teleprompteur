@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import type { PromptSettings } from '../domain/settings';
+import { normalizeSettings, type PromptSettings } from '../domain/settings';
 import type { SharedPrompt } from '../domain/sharedPrompt';
 import { computeStats } from '../domain/stats';
 import { defaultTitle } from '../domain/text';
 import { requestPersistentStorage } from '../storage/db';
 import { loadDraft, saveDraft } from '../storage/draftRepo';
 import { DEFAULT_PREFERENCES, loadPreferences, savePreferences } from '../storage/preferencesRepo';
-import { createPrompt, getPrompt, updatePrompt } from '../storage/promptsRepo';
+import { createPrompt, getPrompt, setDriveLink, updatePrompt } from '../storage/promptsRepo';
 import type { Draft, DriveLink, Preferences, Prompt } from '../storage/types';
 
 export type SaveResult =
@@ -31,6 +31,10 @@ interface SessionState {
   loadShared(shared: SharedPrompt, drive?: DriveLink | null): void;
   save(options?: { title?: string; force?: boolean }): Promise<SaveResult>;
   saveAs(title: string): Promise<Prompt>;
+  /** Lien Drive du prompt courant (enregistré aussi en base s'il est sauvegardé). */
+  setDriveLink(drive: DriveLink | null): Promise<void>;
+  /** Charge un prompt lu sur Drive, dans le prompt local lié s'il existe. */
+  loadDrivePrompt(shared: SharedPrompt, drive: DriveLink, local: Prompt | null): void;
   /** Le prompt courant a été supprimé : le brouillon devient non enregistré. */
   detach(): void;
   /** Le prompt courant a été modifié ailleurs (renommage depuis la bibliothèque…). */
@@ -98,7 +102,8 @@ export const useSession = create<SessionState>()((set, get) => {
 
     setText: (text) => patchDraft({ text }),
     setTitle: (title) => patchDraft({ title }),
-    updateSettings: (patch) => patchDraft({ settings: { ...get().draft.settings, ...patch } }),
+    updateSettings: (patch) =>
+      patchDraft({ settings: normalizeSettings({ ...get().draft.settings, ...patch }) }),
     setMeasuredDistance: (measuredDistance) => set({ measuredDistance }),
 
     newPrompt() {
@@ -131,6 +136,7 @@ export const useSession = create<SessionState>()((set, get) => {
           text: draft.text,
           settings: draft.settings,
           stats: statsFor(draft),
+          drive: draft.drive,
         });
         void requestPersistentStorage();
         set({ draft: draftFromPrompt(prompt), saved: prompt });
@@ -148,6 +154,7 @@ export const useSession = create<SessionState>()((set, get) => {
         text: draft.text,
         settings: draft.settings,
         stats: statsFor(draft),
+        drive: draft.drive,
       });
       set({ draft: draftFromPrompt(prompt), saved: prompt });
       return { status: 'saved', prompt };
@@ -166,6 +173,33 @@ export const useSession = create<SessionState>()((set, get) => {
       return prompt;
     },
 
+    async setDriveLink(drive) {
+      const { draft, saved } = get();
+      if (draft.promptId) await setDriveLink(draft.promptId, drive);
+      set({
+        draft: { ...get().draft, drive },
+        saved: saved && saved.id === draft.promptId ? { ...saved, drive } : saved,
+      });
+    },
+
+    loadDrivePrompt(shared, drive, local) {
+      if (!local) {
+        get().loadShared(shared, drive);
+        return;
+      }
+      // Fichier déjà lié à un prompt local : on l'ouvre avec le contenu Drive (modifié si différent).
+      set({
+        saved: local,
+        draft: {
+          ...draftFromPrompt(local),
+          title: shared.title || local.title,
+          text: shared.text,
+          settings: shared.settings,
+          drive,
+        },
+      });
+    },
+
     detach() {
       patchDraft({ promptId: null, baseUpdatedAt: null });
       set({ saved: null });
@@ -180,8 +214,12 @@ export const useSession = create<SessionState>()((set, get) => {
     },
 
     async setPreferences(preferences) {
-      await savePreferences(preferences);
-      set({ preferences });
+      const normalized = {
+        ...preferences,
+        defaultSettings: normalizeSettings(preferences.defaultSettings),
+      };
+      set({ preferences: normalized });
+      await savePreferences(normalized);
     },
   };
 });

@@ -36,3 +36,24 @@ export function splitBlocks(text: string): Block[] {
   flushParagraph();
   return blocks;
 }
+
+export interface Segment {
+  text: string;
+  /** Indication scénique `[…]` (F43) : affichée dans une autre couleur, non comptée. */
+  stage: boolean;
+}
+
+const STAGE_DIRECTION = /\[[^\]\n]*\]/g;
+
+/** Découpe un paragraphe en texte à lire et indications scéniques. */
+export function splitSegments(text: string): Segment[] {
+  const segments: Segment[] = [];
+  let last = 0;
+  for (const match of text.matchAll(STAGE_DIRECTION)) {
+    if (match.index > last) segments.push({ text: text.slice(last, match.index), stage: false });
+    segments.push({ text: match[0], stage: true });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) segments.push({ text: text.slice(last), stage: false });
+  return segments;
+}

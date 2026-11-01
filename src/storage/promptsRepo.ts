@@ -1,6 +1,6 @@
 import { normalizeSettings, type PromptSettings } from '../domain/settings';
 import { db } from './db';
-import type { Prompt, PromptStats, ReadingPosition } from './types';
+import type { DriveLink, Prompt, PromptStats, ReadingPosition } from './types';
 
 /** Normalise un prompt lu en base : les réglages ajoutés depuis prennent leur valeur par défaut. */
 function hydrate(prompt: Prompt): Prompt {
@@ -21,6 +21,8 @@ export interface PromptInput {
   text: string;
   settings: PromptSettings;
   stats: PromptStats;
+  /** Lien Drive (F29) ; absent = inchangé lors d'une mise à jour, nul à la création. */
+  drive?: DriveLink | null;
 }
 
 export async function createPrompt(input: PromptInput, now = new Date()): Promise<Prompt> {
@@ -28,8 +30,8 @@ export async function createPrompt(input: PromptInput, now = new Date()): Promis
   const prompt: Prompt = {
     id: crypto.randomUUID(),
     ...input,
+    drive: input.drive ?? null,
     lastPosition: null,
-    drive: null,
     createdAt: timestamp,
     updatedAt: timestamp,
     lastUsedAt: null,
@@ -67,6 +69,16 @@ export async function deletePrompt(id: string): Promise<void> {
 /** Position de lecture et date d'utilisation : métadonnées, sans changer `updatedAt`. */
 export async function setLastPosition(id: string, position: ReadingPosition | null): Promise<void> {
   await db.prompts.update(id, { lastPosition: position });
+}
+
+/** Lien vers le fichier Drive : métadonnée, sans changer `updatedAt`. */
+export async function setDriveLink(id: string, drive: DriveLink | null): Promise<void> {
+  await db.prompts.update(id, { drive });
+}
+
+export async function findPromptByDriveFile(fileId: string): Promise<Prompt | undefined> {
+  const prompts = await listPrompts();
+  return prompts.find((p) => p.drive?.fileId === fileId);
 }
 
 export async function touchLastUsed(id: string, now = new Date()): Promise<void> {

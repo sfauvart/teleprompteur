@@ -11,7 +11,11 @@ interface NumberStepperProps {
   label: string;
   icon?: ReactNode;
   suffix?: ReactNode;
+  /** Affichage de la valeur (ex. virgule décimale). */
+  format?: (value: number) => string;
 }
+
+const defaultFormat = (value: number) => String(value).replace('.', ',');
 
 /**
  * Champ numérique à pas : boutons −/+ et saisie libre, validée à la sortie du champ.
@@ -25,6 +29,7 @@ export function NumberStepper({
   label,
   icon,
   suffix,
+  format = defaultFormat,
 }: NumberStepperProps) {
   const [editing, setEditing] = useState<string | null>(null);
 
@@ -55,9 +60,9 @@ export function NumberStepper({
       </button>
       <input
         className="stepper-input"
-        inputMode="numeric"
+        inputMode={Number.isInteger(step) ? 'numeric' : 'decimal'}
         aria-label={label}
-        value={editing ?? String(value)}
+        value={editing ?? format(value)}
         onChange={(e) => setEditing(e.target.value)}
         onFocus={(e) => e.target.select()}
         onBlur={commit}

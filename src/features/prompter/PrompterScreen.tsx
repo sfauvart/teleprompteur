@@ -2,11 +2,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalS
 import { useGesture } from '@use-gesture/react';
 import { goBack, navigate } from '../../app/router';
 import { saveCurrent } from '../../app/actions';
-import { estimateDurationSec } from '../../domain/duration';
+import { estimateDurationSec, formatDuration, formatGap } from '../../domain/duration';
 import { audioFileName } from '../../domain/filename';
 import {
   clampFontSize,
-  fontSizePx,
+  textStartRatio,
   type PromptSettings,
   type SpeedUnit,
 } from '../../domain/settings';
@@ -29,11 +29,39 @@ import { useSession } from '../../stores/sessionStore';
 import { choose, toast } from '../../ui/feedback';
 import { ScrollEngine, type Layout } from './engine/scrollEngine';
 import { Controls } from './Controls';
-import { PrompterContent } from './PrompterContent';
+import { PrompterContent, textStyle } from './PrompterContent';
+import { DisplaySettingsForm } from '../display/DisplaySettingsForm';
+import { CloseIcon } from '../../ui/icons';
 import { ShortcutsHelp } from './ShortcutsHelp';
 import { useShortcuts } from './useShortcuts';
 
 const BAR_AUTO_HIDE_MS = 3000;
+
+/** Temps de lecture réel (hors pauses) d'une session, pour le bilan de durée (F44). */
+class PlayTimer {
+  private total = 0;
+  private startedAt: number | null = null;
+
+  start(): void {
+    this.startedAt ??= performance.now();
+  }
+
+  pause(): void {
+    if (this.startedAt === null) return;
+    this.total += performance.now() - this.startedAt;
+    this.startedAt = null;
+  }
+
+  reset(): void {
+    this.total = 0;
+    this.startedAt = null;
+  }
+
+  seconds(): number {
+    const running = this.startedAt === null ? 0 : performance.now() - this.startedAt;
+    return (this.total + running) / 1000;
+  }
+}
 
 function measureLayout(content: HTMLElement): Layout {
   const blocks = content.querySelectorAll<HTMLElement>('[data-block]');
@@ -70,10 +98,16 @@ export function PrompterScreen() {
   const [engine] = useState(() => new ScrollEngine());
   const [recorder] = useState(() => new AudioRecorder());
   const [wakeLock] = useState(() => new ScreenWakeLock());
+  const [playTimer] = useState(() => new PlayTimer());
   const snapshot = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
 
   const surfaceRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [showDisplay, setShowDisplay] = useState(false);
+  const [endSummary, setEndSummary] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(() => fullscreenElement() !== null);
   const [barHidden, setBarHidden] = useState(false);
   const [idleHidden, setIdleHidden] = useState(false);
@@ -97,12 +131,16 @@ export function PrompterScreen() {
 
   useEffect(() => engine.setSpeed(speedPx), [engine, speedPx]);
 
+  const startRatio = textStartRatio(settings.readingZone);
+  useEffect(() => engine.setStartRatio(startRatio), [engine, startRatio]);
+
   // Mesures : surface et contenu suivis par ResizeObserver (spec technique §7.1, §7.6).
   useLayoutEffect(() => {
     const surface = surfaceRef.current;
     const content = contentRef.current;
     if (!surface || !content) return;
     engine.attach(content);
+    engine.attachProgress(progressRef.current);
     const measure = () => {
       engine.setSurfaceHeight(surface.clientHeight);
       const layout = measureLayout(content);
@@ -200,6 +238,7 @@ export function PrompterScreen() {
     previousState.current = state;
     if (previous === state) return;
     if (state === 'playing') {
+      playTimer.start();
       void wakeLock.acquire();
       recorder.startOrResume();
       const { draft: d } = latest.current;
@@ -209,6 +248,8 @@ export function PrompterScreen() {
       }
       return;
     }
+    playTimer.pause();
+    if (state === 'idle') playTimer.reset();
     void wakeLock.release();
     if (state === 'paused') {
       recorder.pause();
@@ -220,6 +261,27 @@ export function PrompterScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshot.state]);
 
+  // Bilan de durée en fin de texte (F44).
+  useEffect(
+    () =>
+      engine.onEnd(() => {
+        playTimer.pause();
+        const actual = playTimer.seconds();
+        const target = latest.current.settings.targetDurationSec;
+        setEndSummary(
+          target
+            ? fr.target.endSummary(
+                formatDuration(actual),
+                formatDuration(target),
+                formatGap(actual - target),
+              )
+            : fr.target.endActual(formatDuration(actual)),
+        );
+        playTimer.reset();
+      }),
+    [engine, playTimer],
+  );
+
   // Fermeture : position mémorisée, micro coupé, plein écran quitté.
   useEffect(
     () => () => {
@@ -227,6 +289,7 @@ export function PrompterScreen() {
       if (state === 'playing' || state === 'paused') savePosition();
       void recorder.disable().then(deliver);
       wakeLock.dispose();
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
       void exitFullscreen();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -263,6 +326,37 @@ export function PrompterScreen() {
 
   const close = () => goBack('editor');
 
+  const cancelCountdown = () => {
+    if (countdownTimer.current) clearInterval(countdownTimer.current);
+    countdownTimer.current = null;
+    setCountdown(null);
+  };
+
+  /** Lecture / pause, précédée d'un compte à rebours au démarrage d'une session (F40). */
+  const togglePlay = () => {
+    if (countdownTimer.current) return cancelCountdown();
+    const state = engine.getSnapshot().state;
+    if (state === 'playing') return engine.pause();
+    setEndSummary(null);
+    const seconds = latest.current.settings.countdownSec;
+    if ((state !== 'idle' && state !== 'ended') || seconds <= 0) return engine.play();
+    if (state === 'ended') engine.stop();
+    let remaining = seconds;
+    setCountdown(remaining);
+    countdownTimer.current = setInterval(() => {
+      remaining -= 1;
+      if (remaining > 0) return setCountdown(remaining);
+      cancelCountdown();
+      engine.play();
+    }, 1000);
+  };
+
+  const stop = () => {
+    cancelCountdown();
+    setEndSummary(null);
+    engine.stop();
+  };
+
   const setFontSize = (fontSize: number) => {
     if (fontSize !== latest.current.settings.fontSize) updateSettings({ fontSize });
   };
@@ -277,9 +371,11 @@ export function PrompterScreen() {
     false;
 
   useShortcuts({
-    togglePlay: () => engine.toggle(),
+    togglePlay,
     escape: () => {
-      if (showHelp) setShowHelp(false);
+      if (countdownTimer.current) cancelCountdown();
+      else if (showDisplay) setShowDisplay(false);
+      else if (showHelp) setShowHelp(false);
       else if (fullscreenElement()) void exitFullscreen();
       else close();
     },
@@ -288,7 +384,7 @@ export function PrompterScreen() {
     size: (direction) => setFontSize(clampFontSize(latest.current.settings.fontSize + direction)),
     page: (direction) => engine.page(direction),
     paragraph: (direction) => engine.jumpBlock(direction, isParagraph),
-    stop: () => engine.stop(),
+    stop,
     fullscreen: () => isFullscreenSupported() && toggleFullscreen(),
     mirror: () => updateSettings({ mirrorX: !latest.current.settings.mirrorX }),
     invert: () => updateSettings({ mirrorY: !latest.current.settings.mirrorY }),
@@ -303,7 +399,7 @@ export function PrompterScreen() {
     {
       onDrag: ({ tap, delta: [, dy], pinching, cancel }) => {
         if (pinching) return cancel();
-        if (tap) engine.toggle();
+        if (tap) togglePlay();
         else engine.nudge(-dy);
       },
       onWheel: ({ delta: [, dy], pinching }) => {
@@ -327,13 +423,10 @@ export function PrompterScreen() {
   const barVisible = !barHidden && !(idleHidden && snapshot.state === 'playing');
   const zone = settings.readingZone;
 
+  const { fontSize, lineHeight, columnWidth, font, align, theme } = settings;
   const contentStyle = useMemo(
-    () => ({
-      fontSize: `${fontSizePx(settings.fontSize)}px`,
-      ['--line-height' as string]: String(settings.lineHeight),
-      color: settings.theme.text,
-    }),
-    [settings.fontSize, settings.lineHeight, settings.theme.text],
+    () => textStyle({ fontSize, lineHeight, columnWidth, font, align, theme }),
+    [fontSize, lineHeight, columnWidth, font, align, theme],
   );
 
   return (
@@ -356,7 +449,41 @@ export function PrompterScreen() {
             background: `rgba(255, 255, 255, ${zone.opacity})`,
           }}
         />
-        {snapshot.state === 'ended' && <div className="end-badge">{fr.prompter.end}</div>}
+        {countdown !== null && (
+          <div
+            className="countdown"
+            style={{ top: `${zone.top * 100}%`, height: `${(zone.bottom - zone.top) * 100}%` }}
+            role="timer"
+            aria-live="assertive"
+          >
+            <span className="countdown-value">{countdown}</span>
+            <span className="countdown-hint">{fr.countdown.cancel}</span>
+          </div>
+        )}
+        {snapshot.state === 'ended' && (
+          <div className="end-badge">
+            {fr.prompter.end}
+            {endSummary && <span> · {endSummary}</span>}
+          </div>
+        )}
+      </div>
+
+      <div
+        className="progress"
+        role="slider"
+        aria-label={fr.progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={
+          snapshot.distance > 0 ? Math.round((snapshot.position / snapshot.distance) * 100) : 0
+        }
+        tabIndex={-1}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          engine.seekFraction((e.clientX - rect.left) / rect.width);
+        }}
+      >
+        <div ref={progressRef} className="progress-fill" />
       </div>
 
       {barVisible && (
@@ -369,19 +496,38 @@ export function PrompterScreen() {
           recorder={recorder}
           fullscreenSupported={isFullscreenSupported()}
           isFullscreen={isFullscreen}
-          onTogglePlay={() => engine.toggle()}
-          onStop={() => engine.stop()}
+          countdown={countdown !== null}
+          onTogglePlay={togglePlay}
+          onStop={stop}
           onFullscreen={toggleFullscreen}
           onSpeed={(value) => updateSettings({ speed: { unit: settings.speed.unit, value } })}
           onUnit={setUnit}
           onFontSize={setFontSize}
           onSetting={(patch: Partial<PromptSettings>) => updateSettings(patch)}
           onHelp={() => setShowHelp(true)}
+          onDisplay={() => setShowDisplay((open) => !open)}
           onClose={close}
         />
       )}
 
       {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
+
+      {showDisplay && (
+        <div className="help-panel display-panel" role="dialog" aria-labelledby="display-title">
+          <div className="help-header">
+            <h2 id="display-title">{fr.display.title}</h2>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setShowDisplay(false)}
+              aria-label={fr.common.close}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+          <DisplaySettingsForm settings={settings} onChange={updateSettings} />
+        </div>
+      )}
     </div>
   );
 }

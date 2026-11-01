@@ -90,3 +90,16 @@ describe('matchesQuery', () => {
     expect(matchesQuery(prompt, '  ')).toBe(true);
   });
 });
+
+describe('splitSegments', () => {
+  it('isole les indications scéniques', async () => {
+    const { splitSegments } = await import('./blocks');
+    expect(splitSegments('Bonsoir [pause] à tous [sourire]')).toEqual([
+      { text: 'Bonsoir ', stage: false },
+      { text: '[pause]', stage: true },
+      { text: ' à tous ', stage: false },
+      { text: '[sourire]', stage: true },
+    ]);
+    expect(splitSegments('Sans indication')).toEqual([{ text: 'Sans indication', stage: false }]);
+  });
+});

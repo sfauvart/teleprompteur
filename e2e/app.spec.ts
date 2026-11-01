@@ -223,3 +223,56 @@ test('Sécurité — aucune violation de CSP', async ({ page }) => {
   await page.waitForTimeout(300);
   expect(violations).toEqual([]);
 });
+
+test('F40 — compte à rebours avant le défilement', async ({ page }) => {
+  await typeText(page, TEXT);
+  await openPrompter(page);
+  await page.getByRole('button', { name: 'Lecture', exact: true }).click();
+  await expect(page.getByRole('timer')).toContainText('3');
+  await expect(page.getByRole('timer')).toHaveCount(0, { timeout: 5000 });
+  await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+});
+
+test('F41 — panneau d’affichage : thème et largeur', async ({ page, isMobile }) => {
+  await typeText(page, TEXT);
+  await openPrompter(page);
+  if (isMobile) await page.getByRole('button', { name: 'Autres réglages' }).click();
+  await page.getByRole('button', { name: 'Affichage et lecture' }).click();
+  const panel = page.getByRole('dialog', { name: 'Affichage et lecture' });
+  await panel.getByRole('radio', { name: 'Noir sur blanc' }).click();
+  await expect(page.locator('.prompter')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(page.locator('.prompter-text')).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await panel.getByRole('radio', { name: 'Centré' }).click();
+  await expect(page.locator('.prompter-text')).toHaveCSS('text-align', 'center');
+});
+
+test('F43 — indications scéniques en couleur', async ({ page }) => {
+  await typeText(page, 'Bonsoir [sourire] à tous.');
+  await expect(page.locator('.cm-stage')).toHaveText('[sourire]');
+  await expect(page.locator('.editor-stats')).toContainText('3 mots');
+  await openPrompter(page);
+  await expect(page.locator('.prompter-text .stage')).toHaveText('[sourire]');
+});
+
+test('F42 — barre de progression cliquable', async ({ page }) => {
+  await typeText(page, TEXT);
+  await openPrompter(page);
+  const bar = page.getByRole('slider', { name: 'Progression dans le texte' });
+  const box = await bar.boundingBox();
+  if (!box) throw new Error('barre absente');
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(bar).toHaveAttribute('aria-valuenow', /^(4\d|5\d)$/, { timeout: 3000 });
+});
+
+test('F44 — durée cible et vitesse proposée', async ({ page }) => {
+  await typeText(page, TEXT);
+  const target = page.getByRole('textbox', { name: 'Durée cible' });
+  await target.fill('0:10');
+  await target.press('Enter');
+  await expect(page.getByText('Vitesse pour tenir la durée : 175 mots/min')).toBeVisible();
+  await page.getByRole('button', { name: 'Appliquer' }).click();
+  await expect(page.locator('.editor-stats')).toContainText('175 mots/min');
+  await target.fill('n’importe quoi');
+  await target.press('Enter');
+  await expect(page.getByText('Durée illisible')).toBeVisible();
+});

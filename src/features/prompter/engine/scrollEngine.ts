@@ -47,7 +47,7 @@ export function positionOf(layout: Layout, anchor: Anchor): number {
   return top + anchor.fraction * (layout.heights[anchor.blockIndex] ?? 0);
 }
 
-/** Proportion de la hauteur de la surface où commence le texte (haut de la zone de lecture). */
+/** Proportion de la hauteur de la surface où commence le texte (par défaut : haut de la zone de lecture). */
 export const START_RATIO = 0.35;
 const MAX_FRAME_DELTA_MS = 100;
 const SEEK_DURATION_MS = 250;
@@ -69,6 +69,8 @@ export class ScrollEngine {
   private layout: Layout = EMPTY_LAYOUT;
   private surfaceHeight = 0;
   private content: HTMLElement | null = null;
+  private progress: HTMLElement | null = null;
+  private startRatio = START_RATIO;
   private frame: number | null = null;
   private lastTime: number | null = null;
   private tween: { from: number; to: number; start: number } | null = null;
@@ -80,8 +82,13 @@ export class ScrollEngine {
   private readonly requestFrame: (callback: (time: number) => void) => number;
   private readonly cancelFrame: (id: number) => void;
 
-  /** Appelé quand la fin du texte est atteinte en lecture. */
-  onEnd: (() => void) | null = null;
+  private endListeners = new Set<() => void>();
+
+  /** Prévient quand la fin du texte est atteinte en lecture. */
+  onEnd(listener: () => void): () => void {
+    this.endListeners.add(listener);
+    return () => this.endListeners.delete(listener);
+  }
 
   constructor(options: ScrollEngineOptions = {}) {
     this.now = options.now ?? (() => performance.now());
@@ -109,6 +116,24 @@ export class ScrollEngine {
   detach(): void {
     this.stopLoop();
     this.content = null;
+    this.progress = null;
+  }
+
+  /** Barre de progression (F42) : mise à jour à chaque image, sans passer par React. */
+  attachProgress(element: HTMLElement | null): void {
+    this.progress = element;
+    this.apply();
+  }
+
+  /** Position de la ligne de départ, en fraction de la hauteur de la surface. */
+  setStartRatio(ratio: number): void {
+    this.startRatio = ratio;
+    this.apply();
+  }
+
+  /** Va à une fraction (0–1) du texte, avec animation (clic sur la barre de progression). */
+  seekFraction(fraction: number): void {
+    this.seek(clamp(fraction, 0, 1) * this.layout.distance);
   }
 
   setSurfaceHeight(height: number): void {
@@ -275,7 +300,7 @@ export class ScrollEngine {
       this.apply();
       this.lastTime = null;
       this.notify(true);
-      this.onEnd?.();
+      for (const listener of this.endListeners) listener();
       return;
     }
 
@@ -286,9 +311,14 @@ export class ScrollEngine {
   };
 
   private apply(): void {
-    if (!this.content) return;
-    const offset = START_RATIO * this.surfaceHeight - this.position;
-    this.content.style.transform = `translate3d(0, ${offset}px, 0)`;
+    if (this.content) {
+      const offset = this.startRatio * this.surfaceHeight - this.position;
+      this.content.style.transform = `translate3d(0, ${offset}px, 0)`;
+    }
+    if (this.progress) {
+      const ratio = this.layout.distance > 0 ? this.position / this.layout.distance : 0;
+      this.progress.style.transform = `scaleX(${clamp(ratio, 0, 1)})`;
+    }
   }
 
   private buildSnapshot(): EngineSnapshot {

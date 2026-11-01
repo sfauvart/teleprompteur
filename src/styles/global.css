@@ -14,6 +14,7 @@
   --selection: rgba(255, 207, 74, 0.3);
   --editor-bg: #0d0d0d;
   --editor-text: #fafafa;
+  --stage: #6cb6ff;
   --radius: 10px;
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-text: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -208,6 +209,55 @@ select {
   vertical-align: middle;
 }
 
+.badge.drive {
+  color: var(--success);
+}
+
+.badge.drive.modified {
+  color: var(--accent);
+}
+
+.drive-browser {
+  width: min(36rem, calc(100vw - 2rem));
+}
+
+.drive-files {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 50vh;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.drive-file {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.drive-file:hover {
+  border-color: var(--muted);
+}
+
+.menu-list button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -311,6 +361,10 @@ select {
   color: var(--text);
   font: inherit;
   cursor: pointer;
+}
+
+.segmented.wrap {
+  flex-wrap: wrap;
 }
 
 .segmented button.active {
@@ -470,6 +524,34 @@ select {
   text-align: center;
 }
 
+.target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.target-input {
+  width: 7rem;
+}
+
+.target-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.target .error {
+  margin: 0;
+}
+
+.target-proposal {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
 /* ---------- Bibliothèque ---------- */
 .library-header {
   display: flex;
@@ -571,6 +653,29 @@ select {
   gap: 0.5rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--border);
+}
+
+.display-form .pref-row:last-child {
+  border-bottom: none;
+}
+
+.colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.color-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.color-field input {
+  width: 44px;
+  height: 36px;
+  padding: 2px;
+  cursor: pointer;
 }
 
 .pref-switches {
@@ -714,6 +819,10 @@ p.prompter-block + .prompter-block,
   pointer-events: none;
 }
 
+.prompter-text .stage {
+  color: var(--stage-color, #6cb6ff);
+}
+
 .reading-zone {
   position: absolute;
   left: 0;
@@ -741,6 +850,60 @@ p.prompter-block + .prompter-block,
 .reading-zone::after {
   right: 0;
   border-right: 6vh solid rgba(255, 255, 255, 0.3);
+}
+
+.countdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.countdown-value {
+  font-size: min(30vh, 40vw);
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-hint {
+  color: #ccc;
+  font-size: 1rem;
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  height: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--accent);
+  opacity: 0.7;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.progress:hover .progress-fill {
+  height: 8px;
+  opacity: 1;
 }
 
 .end-badge {
@@ -834,6 +997,14 @@ p.prompter-block + .prompter-block,
   border-radius: var(--radius);
   background: var(--surface);
   transform: translate(-50%, -50%);
+}
+
+.display-panel {
+  width: min(40rem, calc(100vw - 2rem));
+}
+
+.display-panel .stepper-input {
+  background: var(--bg);
 }
 
 .help-header {

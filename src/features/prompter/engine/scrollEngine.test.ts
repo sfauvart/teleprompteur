@@ -115,7 +115,7 @@ describe('ScrollEngine', () => {
   it('s’arrête en fin de texte et prévient', () => {
     const { engine, frames } = setup();
     let ended = 0;
-    engine.onEnd = () => ended++;
+    engine.onEnd(() => ended++);
     engine.setLayout(layout([100]));
     engine.setSpeed(200);
     engine.play();
@@ -175,5 +175,16 @@ describe('ScrollEngine', () => {
     engine.setLayout(layout([100, 200]));
     expect(engine.getPosition()).toBe(200);
     expect(engine.getSnapshot().state).toBe('paused');
+  });
+
+  it('suit la ligne de départ et met à jour la barre de progression', () => {
+    const { engine, content } = setup();
+    const bar = document.createElement('div');
+    engine.attachProgress(bar);
+    engine.setLayout(layout([1000]));
+    engine.setStartRatio(0.5);
+    expect(content.style.transform).toBe('translate3d(0, 500px, 0)');
+    engine.nudge(250);
+    expect(bar.style.transform).toBe('scaleX(0.25)');
   });
 });

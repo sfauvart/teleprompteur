@@ -1,10 +1,47 @@
-import { memo, useMemo } from 'react';
-import { splitBlocks, type Block } from '../../domain/blocks';
+import { memo, useMemo, type CSSProperties } from 'react';
+import { splitBlocks, splitSegments, type Block } from '../../domain/blocks';
+import { FONTS, fontSizePx, type PromptSettings } from '../../domain/settings';
 
 interface PrompterContentProps {
   text: string;
   /** Hauteur de ligne (multiplicateur), utilisée pour les espacements entre blocs. */
   lineHeight: number;
+}
+
+/** Réglages qui influent sur la mise en page du texte (et donc sur sa hauteur). */
+export type TextDisplay = Pick<
+  PromptSettings,
+  'fontSize' | 'lineHeight' | 'columnWidth' | 'font' | 'align' | 'theme'
+>;
+
+/** Style de la colonne de texte, partagé par l'affichage et la mesure (F41). */
+export function textStyle(display: TextDisplay): CSSProperties {
+  return {
+    fontSize: `${fontSizePx(display.fontSize)}px`,
+    ['--line-height' as string]: String(display.lineHeight),
+    ['--stage-color' as string]: display.theme.stage,
+    width: `${display.columnWidth}%`,
+    fontFamily: FONTS[display.font].stack,
+    textAlign: display.align,
+    color: display.theme.text,
+  };
+}
+
+function Paragraph({ text }: { text: string }) {
+  const segments = useMemo(() => splitSegments(text), [text]);
+  return (
+    <>
+      {segments.map((segment, i) =>
+        segment.stage ? (
+          <span key={i} className="stage">
+            {segment.text}
+          </span>
+        ) : (
+          segment.text
+        ),
+      )}
+    </>
+  );
 }
 
 /**
@@ -21,7 +58,7 @@ export const PrompterContent = memo(function PrompterContent({
       {blocks.map((block, index) =>
         block.kind === 'paragraph' ? (
           <p key={index} className="prompter-block" data-block={index} data-paragraph="">
-            {block.text}
+            <Paragraph text={block.text} />
           </p>
         ) : (
           <div
@@ -53,15 +90,15 @@ function appendBlocks(container: HTMLElement, blocks: Block[], lineHeight: numbe
  * Hauteur du texte tel qu'il serait affiché dans le prompteur, pour la largeur de fenêtre
  * courante : durée estimée en px/s depuis l'éditeur (F1, F8).
  */
-export function measureDistance(text: string, fontSizePx: number, lineHeight: number): number {
+export function measureDistance(text: string, display: TextDisplay): number {
   const host = document.createElement('div');
   host.className = 'prompter-measure';
   host.style.width = `${window.innerWidth}px`;
   const content = document.createElement('div');
   content.className = 'prompter-text';
-  content.style.fontSize = `${fontSizePx}px`;
-  content.style.setProperty('--line-height', String(lineHeight));
-  appendBlocks(content, splitBlocks(text), lineHeight);
+  Object.assign(content.style, textStyle(display));
+  content.style.setProperty('--line-height', String(display.lineHeight));
+  appendBlocks(content, splitBlocks(text), display.lineHeight);
   host.appendChild(content);
   document.body.appendChild(host);
   const height = content.offsetHeight;

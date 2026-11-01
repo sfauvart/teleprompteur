@@ -47,3 +47,43 @@ describe('clampSpeed', () => {
     expect(clampSpeed('wpm', 10)).toBe(60);
   });
 });
+
+describe('réglages d’affichage (F40, F41, F44)', () => {
+  it('arrondit l’interligne, la largeur et le compte à rebours au pas', () => {
+    const s = normalizeSettings({ lineHeight: 1.43, columnWidth: 72, countdownSec: 2.6 });
+    expect(s.lineHeight).toBe(1.4);
+    expect(s.columnWidth).toBe(70);
+    expect(s.countdownSec).toBe(3);
+  });
+
+  it('garde une zone de lecture dans l’écran avec une hauteur minimale', () => {
+    expect(
+      normalizeSettings({ readingZone: { top: 0.5, bottom: 0.52 } }).readingZone,
+    ).toMatchObject({
+      top: 0.5,
+      bottom: 0.6,
+    });
+    expect(
+      normalizeSettings({ readingZone: { top: 0.95, bottom: 1.4 } }).readingZone,
+    ).toMatchObject({
+      top: 0.8,
+      bottom: 1,
+    });
+  });
+
+  it('refuse une police inconnue et borne la durée cible', () => {
+    const s = normalizeSettings({ font: 'Comic Sans', targetDurationSec: 2 });
+    expect(s.font).toBe('system');
+    expect(s.targetDurationSec).toBe(10);
+    expect(normalizeSettings({ targetDurationSec: null }).targetDurationSec).toBeNull();
+  });
+
+  it('complète un thème partiel', () => {
+    expect(normalizeSettings({ theme: { text: '#ffe14d' } }).theme).toEqual({
+      text: '#ffe14d',
+      background: '#000000',
+      highlight: '#5c4b00',
+      stage: '#6cb6ff',
+    });
+  });
+});
