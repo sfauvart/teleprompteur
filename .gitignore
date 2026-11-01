@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dev-dist/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+
+# Variables locales (identifiants Google, etc.)
+.env.local
+.env.*.local
