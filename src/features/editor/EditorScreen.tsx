@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { EditorView } from '@codemirror/view';
 import {
   copyShareLink,
   exportCurrent,
@@ -21,6 +22,7 @@ import { TargetDuration } from './TargetDuration';
 import { DriveBadge } from '../drive/DriveBadge';
 import { DriveMenu } from '../drive/DriveMenu';
 import { CodeEditor } from './CodeEditor';
+import { MarkdownToolbar } from './MarkdownToolbar';
 
 const MEASURE_DEBOUNCE_MS = 300;
 
@@ -54,6 +56,7 @@ export function EditorScreen() {
   const setTitle = useSession((s) => s.setTitle);
   const [error, setError] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const editorView = useRef<EditorView | null>(null);
 
   useMeasuredDistance(draft.text, draft.settings);
 
@@ -90,7 +93,7 @@ export function EditorScreen() {
         )}
       </div>
 
-      <div className="toolbar" role="toolbar" aria-label="Actions">
+      <div className="toolbar" role="toolbar" aria-label={fr.a11y.actions}>
         <button type="button" className="btn" onClick={() => void newPrompt()}>
           {fr.editor.newPrompt}
         </button>
@@ -150,7 +153,11 @@ export function EditorScreen() {
         <DriveMenu />
       </div>
 
+      <MarkdownToolbar view={editorView} />
       <CodeEditor
+        onView={(view) => {
+          editorView.current = view;
+        }}
         value={draft.text}
         onChange={(text) => {
           setText(text);

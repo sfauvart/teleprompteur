@@ -13,10 +13,10 @@ import { download, pickFiles } from '../services/fileSaver';
 import {
   ImportError,
   buildExportFile,
-  countConflicts,
   exportAsText,
   readImportFile,
   resolveImport,
+  type ConflictStrategy,
   serializeExportFile,
 } from '../storage/exchange';
 import { listPrompts, putPrompts } from '../storage/promptsRepo';
@@ -210,23 +210,41 @@ export async function importFromFiles(): Promise<void> {
       return;
     }
     const existing = new Set((await listPrompts()).map((p) => p.id));
-    const conflicts = countConflicts(imported.prompts, existing);
-    let strategy: 'replace' | 'keep-both' = 'keep-both';
-    if (conflicts > 0) {
+    // Conflits : choix prompt par prompt, avec « … pour tous » (F24).
+    const choices = new Map<string, ConflictStrategy>();
+    let forAll: ConflictStrategy | null = null;
+    const conflicting = imported.prompts.filter((p) => p.id !== undefined && existing.has(p.id));
+    for (const [index, item] of conflicting.entries()) {
+      if (forAll) {
+        choices.set(item.id!, forAll);
+        continue;
+      }
+      const remaining = conflicting.length - index;
       const choice = await choose({
         title: fr.importExport.conflictTitle,
-        message: fr.importExport.conflictMessage(conflicts),
+        message: fr.importExport.conflictOne(item.title, remaining),
         actions: [
           { value: 'cancel', label: fr.common.cancel },
+          ...(remaining > 1
+            ? [
+                { value: 'keep-both-all', label: fr.importExport.keepBothAll },
+                { value: 'replace-all', label: fr.importExport.replaceAll },
+              ]
+            : []),
           { value: 'keep-both', label: fr.common.keepBoth },
-          { value: 'replace', label: fr.common.replace, variant: 'primary' },
+          { value: 'replace', label: fr.common.replace, variant: 'primary' as const },
         ],
       });
-      if (choice !== 'replace' && choice !== 'keep-both') return;
-      strategy = choice;
+      if (choice === null || choice === 'cancel') return;
+      const strategy: ConflictStrategy = choice.startsWith('replace') ? 'replace' : 'keep-both';
+      if (choice.endsWith('-all')) forAll = strategy;
+      choices.set(item.id!, strategy);
     }
-    const prompts = resolveImport(imported.prompts, existing, strategy, (text, settings) =>
-      computeStats(text, settings),
+    const prompts = resolveImport(
+      imported.prompts,
+      existing,
+      (id) => choices.get(id) ?? 'keep-both',
+      (text, settings) => computeStats(text, settings),
     );
     await putPrompts(prompts);
     // Le prompt en cours a pu être remplacé : on met à jour sa référence.

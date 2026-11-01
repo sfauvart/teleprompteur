@@ -1,13 +1,28 @@
-import { EditorScreen } from '../features/editor/EditorScreen';
-import { LibraryScreen } from '../features/library/LibraryScreen';
-import { PreferencesScreen } from '../features/preferences/PreferencesScreen';
-import { PrompterScreen } from '../features/prompter/PrompterScreen';
+import { lazy, Suspense } from 'react';
 import { fr } from '../i18n/fr';
 import { isDirty, useSession } from '../stores/sessionStore';
 import { DialogHost } from '../ui/DialogHost';
 import { ToastHost } from '../ui/ToastHost';
-import { DriveBrowser } from '../features/drive/DriveBrowser';
 import { navigate, useRoute, type Route } from './router';
+
+// Écrans chargés à la demande (spec technique §13 : budget du bundle initial).
+const EditorScreen = lazy(() =>
+  import('../features/editor/EditorScreen').then((m) => ({ default: m.EditorScreen })),
+);
+const LibraryScreen = lazy(() =>
+  import('../features/library/LibraryScreen').then((m) => ({ default: m.LibraryScreen })),
+);
+const PreferencesScreen = lazy(() =>
+  import('../features/preferences/PreferencesScreen').then((m) => ({
+    default: m.PreferencesScreen,
+  })),
+);
+const PrompterScreen = lazy(() =>
+  import('../features/prompter/PrompterScreen').then((m) => ({ default: m.PrompterScreen })),
+);
+const DriveBrowser = lazy(() =>
+  import('../features/drive/DriveBrowser').then((m) => ({ default: m.DriveBrowser })),
+);
 
 const NAV: { route: Route; label: string }[] = [
   { route: 'editor', label: fr.nav.editor },
@@ -23,7 +38,7 @@ function Header({ route }: { route: Route }) {
         <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" width="28" height="28" />
         {fr.appName}
       </span>
-      <nav aria-label="Navigation principale">
+      <nav aria-label={fr.a11y.mainNav}>
         {NAV.map((item) => (
           <a
             key={item.route}
@@ -56,18 +71,20 @@ export function App() {
   const prompter = route === 'prompter';
   return (
     <>
-      {!prompter && (
-        <>
-          <Header route={route} />
-          <main className="app-main">
-            {route === 'editor' && <EditorScreen />}
-            {route === 'library' && <LibraryScreen />}
-            {route === 'preferences' && <PreferencesScreen />}
-          </main>
-        </>
-      )}
-      {prompter && <PrompterScreen />}
-      <DriveBrowser />
+      <Suspense fallback={<div className="loading" aria-busy="true" />}>
+        {!prompter && (
+          <>
+            <Header route={route} />
+            <main className="app-main">
+              {route === 'editor' && <EditorScreen />}
+              {route === 'library' && <LibraryScreen />}
+              {route === 'preferences' && <PreferencesScreen />}
+            </main>
+          </>
+        )}
+        {prompter && <PrompterScreen />}
+        <DriveBrowser />
+      </Suspense>
       <DialogHost />
       <ToastHost />
     </>

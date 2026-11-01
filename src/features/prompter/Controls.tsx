@@ -108,7 +108,7 @@ export function Controls(props: ControlsProps) {
           }
         />
         {props.equivalent !== null && (
-          <span className="equivalent" title={`Équivalent en ${speedUnitLabel(otherUnit)}`}>
+          <span className="equivalent" title={fr.a11y.equivalentIn(speedUnitLabel(otherUnit))}>
             {fr.prompter.equivalent(`${Math.round(props.equivalent)} ${speedUnitLabel(otherUnit)}`)}
           </span>
         )}

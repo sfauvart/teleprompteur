@@ -8,6 +8,7 @@ export interface ShortcutHandlers {
   size(direction: 1 | -1): void;
   page(direction: 1 | -1): void;
   paragraph(direction: 1 | -1): void;
+  section(direction: 1 | -1): void;
   stop(): void;
   fullscreen(): void;
   mirror(): void;
@@ -49,6 +50,11 @@ export function useShortcuts(handlers: ShortcutHandlers): void {
       }
       if (isEditable(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
 
+      if (event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+        event.preventDefault();
+        h.section(event.key === 'ArrowRight' ? 1 : -1);
+        return;
+      }
       const actions: Record<string, () => void> = {
         ' ': h.togglePlay,
         ArrowUp: () => h.speed(1),

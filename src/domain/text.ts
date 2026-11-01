@@ -1,10 +1,6 @@
-/**
- * Texte brut (spec technique §8.3). En P1 le texte est affiché tel que saisi ; la suppression
- * de la syntaxe Markdown arrivera avec F56.
- */
-export function toPlainText(source: string): string {
-  return source;
-}
+import { toPlainText } from './markdown';
+
+export { toPlainText };
 
 const TITLE_MAX_WORDS = 6;
 const TITLE_MAX_LENGTH = 60;

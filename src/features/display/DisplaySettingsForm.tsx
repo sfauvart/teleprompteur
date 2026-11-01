@@ -56,7 +56,12 @@ export function DisplaySettingsForm({ settings, onChange }: DisplaySettingsFormP
                 className={active ? 'active' : ''}
                 onClick={() =>
                   onChange({
-                    theme: { ...theme, text: preset.text, background: preset.background },
+                    theme: {
+                      ...theme,
+                      text: preset.text,
+                      background: preset.background,
+                      highlight: preset.highlight,
+                    },
                   })
                 }
               >
@@ -75,6 +80,7 @@ export function DisplaySettingsForm({ settings, onChange }: DisplaySettingsFormP
               ['text', fr.display.textColor],
               ['background', fr.display.backgroundColor],
               ['stage', fr.display.stageColor],
+              ['highlight', fr.display.highlightColor],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="color-field">

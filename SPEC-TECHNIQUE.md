@@ -172,7 +172,7 @@ type SpeedUnit = 'wpm' | 'pxps';
 
 interface PromptSettings {
   speed: { unit: SpeedUnit; value: number }; // wpm : 60–250 pas 5 ; pxps : 4–200 pas 4
-  fontSize: number;                           // 1–20 (× 8 px)
+  fontSize: number;                           // 1–20, relatif à la largeur de la colonne (§8.2)
   mirrorX: boolean;
   mirrorY: boolean;
   recordAudio: boolean;
@@ -500,6 +500,8 @@ En P3 (F56), ajouts :
 - **P3** : `markdown-it` configuré avec `html: false`, `linkify: false`, `typographer: false`, `breaks: true` ; seules les règles nécessaires sont activées (paragraphe, titre, séparateur, listes, emphase, `markdown-it-mark`). Les liens, images, tableaux, code, citations et HTML sont désactivés : leur syntaxe reste affichée en texte. Les jetons produits sont convertis en **éléments React** (jamais de `dangerouslySetInnerHTML`). Les lignes vides multiples sont préservées par un pré-traitement qui insère des blocs d'espacement.
 - **P2** (F43) : règle en ligne personnalisée pour les indications scéniques `[…]`, rendues en `<span class="stage">` dans une couleur distincte ; titres et séparateurs marqués `data-section` pour les sauts ← / →.
 
+**Taille du texte** (F6, décision D11) : la colonne `.prompter-text` est un conteneur (`container-type: inline-size`) ; la police vaut `réglage / 147,2 × 100cqi`, soit une fraction fixe de la largeur utile de la colonne. Au réglage 10, sur un écran de 1 280 px, cela donne 80 px. La mesure de hauteur (§7.6) suit automatiquement les changements de largeur.
+
 ### 8.3 Texte brut et décompte des mots
 
 - `domain/markdown` fournit `toPlainText(source)` : texte sans syntaxe (utilisé pour l'export .txt, le titre par défaut, la recherche).
@@ -580,7 +582,7 @@ En P3 (F56), ajouts :
 ## 13. Performance et accessibilité
 
 **Performance**
-- 60 images/s en défilement sur une tablette milieu de gamme avec un texte de 5 000 mots et une police à 160 px.
+- 60 images/s en défilement sur une tablette milieu de gamme avec un texte de 5 000 mots et une taille de texte au réglage 20.
 - Aucun re-rendu React pendant le défilement (§7.3) ; contenu du prompteur mémoïsé par (texte, réglages d'affichage).
 - Démarrage hors ligne < 1 s sur ordinateur ; bundle initial < 300 Ko gzip. CodeMirror et markdown-it chargés en différé (`import()` dynamique) s'ils dépassent ce budget.
 

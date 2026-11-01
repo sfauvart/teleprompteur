@@ -70,6 +70,8 @@ describe('export / import', () => {
     const [copy] = resolveImport(imported, existing, 'keep-both', stats);
     expect(copy?.id).not.toBe('p1');
     expect(copy?.title).toBe('Discours (copie)');
+    const [perPrompt] = resolveImport(imported, existing, () => 'keep-both', stats);
+    expect(perPrompt?.title).toBe('Discours (copie)');
   });
 
   it('importe un fichier texte ou Markdown', async () => {

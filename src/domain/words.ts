@@ -1,3 +1,5 @@
+import { toSpokenText } from './markdown';
+
 /** Indications scéniques entre crochets (F43) : affichées mais non prononcées. */
 const STAGE_DIRECTION = /\[[^\]\n]*\]/g;
 
@@ -19,11 +21,14 @@ export function countWords(text: string): number {
 
 const memo = new Map<string, number>();
 
-/** Version mémoïsée (dernier texte uniquement, appelée à chaque frappe). */
+/**
+ * Mots à prononcer d'un texte Markdown : sans syntaxe, puces, numéros de liste ni indications.
+ * Mémoïsé (dernier texte uniquement, appelé à chaque frappe).
+ */
 export function countWordsMemo(text: string): number {
   const cached = memo.get(text);
   if (cached !== undefined) return cached;
-  const result = countWords(text);
+  const result = countWords(toSpokenText(text));
   memo.clear();
   memo.set(text, result);
   return result;

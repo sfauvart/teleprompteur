@@ -252,6 +252,17 @@ function PromptCard({ prompt, current }: { prompt: Prompt; current: boolean }) {
                   {fr.drive.save}
                 </button>
               )}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={run(async () => {
+                  const { preferences, setPreferences } = useSession.getState();
+                  await setPreferences({ ...preferences, defaultSettings: prompt.settings });
+                  toast(fr.library.defaultsSet(prompt.title));
+                })}
+              >
+                {fr.library.setDefaults}
+              </button>
               <button type="button" role="menuitem" className="danger" onClick={run(remove)}>
                 {fr.common.delete}
               </button>

@@ -289,7 +289,11 @@ export class ScrollEngine {
       const t = clamp((this.now() - this.tween.start) / SEEK_DURATION_MS, 0, 1);
       const eased = 1 - (1 - t) ** 3;
       this.position = this.tween.from + (this.tween.to - this.tween.from) * eased;
-      if (t >= 1) this.tween = null;
+      if (t >= 1) {
+        this.tween = null;
+        this.apply();
+        this.notify(true);
+      }
     } else if (this.state === 'playing') {
       this.position += (this.speed * delta) / 1000;
     }
@@ -318,6 +322,10 @@ export class ScrollEngine {
     if (this.progress) {
       const ratio = this.layout.distance > 0 ? this.position / this.layout.distance : 0;
       this.progress.style.transform = `scaleX(${clamp(ratio, 0, 1)})`;
+      this.progress.parentElement?.setAttribute(
+        'aria-valuenow',
+        String(Math.round(clamp(ratio, 0, 1) * 100)),
+      );
     }
   }
 

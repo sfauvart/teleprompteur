@@ -1,6 +1,11 @@
 /** Libellés de l'interface (centralisés pour préparer F57). */
 export const fr = {
   appName: 'Téléprompteur',
+  a11y: {
+    mainNav: 'Navigation principale',
+    actions: 'Actions sur le prompt',
+    equivalentIn: (unit: string) => `Équivalent en ${unit}`,
+  },
   nav: {
     editor: 'Éditeur',
     library: 'Mes prompts',
@@ -87,6 +92,8 @@ export const fr = {
     duplicate: 'Dupliquer',
     exportOne: 'Exporter',
     copyLink: 'Copier le lien',
+    setDefaults: 'Définir comme réglages par défaut',
+    defaultsSet: (title: string) => `Réglages de « ${title} » définis par défaut.`,
     more: 'Autres actions',
     renameDialog: 'Renommer le prompt',
     duplicateDialog: 'Dupliquer le prompt',
@@ -102,8 +109,11 @@ export const fr = {
       `« ${title} » importé dans l’éditeur. Il n’est pas encore enregistré.`,
     imported: (n: number) => `${n} prompt${n > 1 ? 's importés' : ' importé'}.`,
     conflictTitle: 'Prompts déjà présents',
-    conflictMessage: (n: number) =>
-      `${n} prompt${n > 1 ? 's existent' : ' existe'} déjà dans votre bibliothèque.`,
+    conflictOne: (title: string, remaining: number) =>
+      `« ${title} » existe déjà dans votre bibliothèque.` +
+      (remaining > 1 ? ` (${remaining} conflits restants)` : ''),
+    keepBothAll: 'Garder les deux pour tous',
+    replaceAll: 'Remplacer tous',
     error: 'Import impossible',
     nothing: 'Aucun prompt à exporter.',
   },
@@ -150,6 +160,7 @@ export const fr = {
       ['+ / −', 'Augmenter / diminuer la taille du texte'],
       ['Page ↑ / Page ↓', 'Reculer / avancer d’un écran'],
       ['← / →', 'Paragraphe précédent / suivant'],
+      ['Maj+← / Maj+→', 'Section précédente / suivante (titres, séparateurs)'],
       ['Début', 'Revenir au début (Stop)'],
       ['F', 'Plein écran'],
       ['M / I', 'Miroir / Inversion'],
@@ -182,6 +193,17 @@ export const fr = {
     privacy: 'Politique de confidentialité',
     version: (v: string) => `Version ${v}`,
   },
+  format: {
+    toolbar: 'Mise en forme',
+    bold: 'Gras',
+    italic: 'Italique',
+    mark: 'Surligner',
+    heading: 'Titre',
+    headingHint: 'Titre (cliquer à nouveau pour changer de niveau)',
+    bullet: 'Liste à puces',
+    ordered: 'Liste numérotée',
+    separator: 'Séparateur',
+  },
   display: {
     title: 'Affichage et lecture',
     open: 'Affichage',
@@ -190,6 +212,7 @@ export const fr = {
     textColor: 'Texte',
     backgroundColor: 'Fond',
     stageColor: 'Indications [ ]',
+    highlightColor: 'Surlignage',
     font: 'Police',
     lineHeight: 'Interligne',
     columnWidth: 'Largeur du texte',

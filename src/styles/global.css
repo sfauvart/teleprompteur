@@ -504,6 +504,56 @@ select {
   margin-bottom: 0.75rem;
 }
 
+.format-toolbar {
+  position: sticky;
+  top: 61px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface);
+}
+
+.format-btn {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0 0.5rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.format-btn:hover {
+  background: var(--surface-2);
+}
+
+.format-btn.bold {
+  font-weight: 800;
+}
+
+.format-btn.italic {
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+.format-btn.mark {
+  text-decoration: underline 0.35em rgba(255, 207, 74, 0.45);
+  text-underline-offset: -0.15em;
+}
+
+.format-toolbar + .code-editor {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .code-editor {
   border-radius: var(--radius);
   overflow: hidden;
@@ -792,6 +842,12 @@ select {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   hyphens: auto;
+  container-type: inline-size;
+}
+
+/* Taille de police relative à la largeur utile de la colonne (F6). */
+.prompter-flow {
+  font-size: calc(var(--font-scale, 0.068) * 100cqi);
 }
 
 .prompter-scroll {
@@ -806,9 +862,51 @@ select {
   margin: 0;
 }
 
-p.prompter-block + .prompter-block,
-.prompter-block + p.prompter-block {
+/* Une ligne entre deux blocs ; un espacement (lignes vides en plus) remplace cette ligne. */
+.prompter-block + .prompter-block {
   margin-top: calc(var(--line-height, 1.4) * 1em);
+}
+
+[aria-hidden='true'].prompter-block + .prompter-block {
+  margin-top: 0;
+}
+
+.prompter-text h1,
+.prompter-text h2,
+.prompter-text h3 {
+  font-weight: 700;
+  line-height: var(--line-height, 1.4);
+}
+
+.prompter-text h1 {
+  font-size: 1.3em;
+}
+
+.prompter-text h2 {
+  font-size: 1.15em;
+}
+
+.prompter-text h3 {
+  font-size: 1.05em;
+}
+
+.prompter-text hr {
+  height: 0;
+  border: 0;
+  border-top: 0.06em solid currentColor;
+  opacity: 0.5;
+}
+
+.prompter-text mark {
+  padding: 0 0.1em;
+  border-radius: 0.1em;
+  background: var(--mark-color, #5c4b00);
+  color: inherit;
+}
+
+.prompter-text ul,
+.prompter-text ol {
+  padding-left: 1.2em;
 }
 
 .prompter-measure {

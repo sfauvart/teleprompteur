@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { countWords } from './words';
-import { splitBlocks } from './blocks';
 import { defaultTitle, hashText } from './text';
 import { audioFileName, slugify, titleFromFileName } from './filename';
 import { matchesQuery } from './search';
@@ -17,28 +16,6 @@ describe('countWords', () => {
   it('ignore la ponctuation et la syntaxe', () => {
     expect(countWords('**Gras** — ... ---')).toBe(1);
     expect(countWords('')).toBe(0);
-  });
-});
-
-describe('splitBlocks', () => {
-  it('sépare les paragraphes sur les lignes vides', () => {
-    expect(splitBlocks('A\nB\n\nC')).toEqual([
-      { kind: 'paragraph', text: 'A\nB' },
-      { kind: 'paragraph', text: 'C' },
-    ]);
-  });
-
-  it('conserve les lignes vides supplémentaires', () => {
-    expect(splitBlocks('\nA\n\n\n\nB\n\n')).toEqual([
-      { kind: 'spacer', lines: 1 },
-      { kind: 'paragraph', text: 'A' },
-      { kind: 'spacer', lines: 2 },
-      { kind: 'paragraph', text: 'B' },
-    ]);
-  });
-
-  it('normalise les fins de ligne', () => {
-    expect(splitBlocks('A\r\n\r\nB')).toHaveLength(2);
   });
 });
 
@@ -91,15 +68,13 @@ describe('matchesQuery', () => {
   });
 });
 
-describe('splitSegments', () => {
-  it('isole les indications scéniques', async () => {
-    const { splitSegments } = await import('./blocks');
-    expect(splitSegments('Bonsoir [pause] à tous [sourire]')).toEqual([
-      { text: 'Bonsoir ', stage: false },
-      { text: '[pause]', stage: true },
-      { text: ' à tous ', stage: false },
-      { text: '[sourire]', stage: true },
-    ]);
-    expect(splitSegments('Sans indication')).toEqual([{ text: 'Sans indication', stage: false }]);
+describe('Markdown et décompte', () => {
+  it('ne compte ni la syntaxe ni les numéros de liste', async () => {
+    const { countWordsMemo } = await import('./words');
+    expect(countWordsMemo('# Titre\n\n1. un **deux**\n2. trois [pause]')).toBe(4);
+  });
+
+  it('titre par défaut sans syntaxe', () => {
+    expect(defaultTitle('# Discours de **mariage**')).toBe('Discours de mariage');
   });
 });

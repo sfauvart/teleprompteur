@@ -73,14 +73,21 @@ export type ConflictStrategy = 'replace' | 'keep-both';
 export function resolveImport(
   imported: ExportedPrompt[],
   existingIds: ReadonlySet<string>,
-  strategy: ConflictStrategy,
+  /** Choix global, ou par identifiant de prompt en conflit. */
+  strategy: ConflictStrategy | ((id: string) => ConflictStrategy),
   computeStats: (text: string, settings: PromptSettings) => PromptStats,
   now = new Date(),
 ): Prompt[] {
   const timestamp = now.toISOString();
   return imported.map((item) => {
     const conflict = item.id !== undefined && existingIds.has(item.id);
-    const keepBoth = conflict && strategy === 'keep-both';
+    const choice =
+      conflict && item.id !== undefined
+        ? typeof strategy === 'function'
+          ? strategy(item.id)
+          : strategy
+        : 'replace';
+    const keepBoth = conflict && choice === 'keep-both';
     const settings = normalizeSettings(item.settings);
     return {
       id: item.id && !keepBoth ? item.id : crypto.randomUUID(),

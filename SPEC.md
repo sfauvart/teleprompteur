@@ -107,7 +107,7 @@ Règles :
 - Saisie bornée : toute valeur hors plage est ramenée à la borne la plus proche ; champ vide → valeur précédente.
 
 ### F6 — Taille du texte
-- Réglage de **1 à 20**, défaut **10** ; taille de police = `réglage × 8 px` (de 8 à 160 px, défaut 80 px).
+- Réglage de **1 à 20**, défaut **10**. La taille est **relative à la largeur de la colonne de texte** : un même réglage donne le même nombre de caractères par ligne sur tous les écrans (ordinateur, tablette, smartphone). Repère : sur un écran de 1 280 px de large, le réglage 10 correspond à 80 px.
 - Ajustable à tout moment, y compris pendant la lecture, **en conservant la ligne en cours de lecture dans la zone de lecture**.
 - En mode pixels/seconde, la durée estimée est recalculée à chaque changement ; en mode mots/minute, la durée ne change pas (c'est la vitesse en pixels qui s'adapte, cf. F5).
 - Sur écran tactile, le pincement à deux doigts sur le texte modifie aussi la taille.
@@ -365,7 +365,7 @@ Tout autre élément Markdown (liens, images, tableaux, code…) est affiché co
 |---|---|---|---|
 | Unité de vitesse | mots/minute / pixels/seconde | mots/minute | P1 |
 | Vitesse | 60 – 250 mots/min ou 4 – 200 px/s | 140 mots/min (48 px/s) | P1 |
-| Taille du texte | 1 – 20 (× 8 px) | 10 | P1 |
+| Taille du texte | 1 – 20 (relative à la largeur) | 10 | P1 |
 | Miroir horizontal | oui / non | non | P1 |
 | Inversion verticale | oui / non | non | P1 |
 | Enregistrement audio | oui / non | non | P1 |
@@ -403,3 +403,5 @@ Tout autre élément Markdown (liens, images, tableaux, code…) est affiché co
 | D8 | Sous-ensemble Markdown | Gras, italique, surlignage, titres, séparateur, listes ; tout le reste affiché en texte brut. | F56 |
 | D9 | Restauration par URL | Chargement d'un prompt via un lien contenant le prompt compressé, ou via un lien vers un fichier Google Drive. | F28, F29 |
 | D10 | Google Drive | Enregistrement et ouverture de prompts dans Google Drive, sur action explicite. | F29, F26 |
+| D11 | Taille du texte | Relative à la largeur de la colonne de texte, pour un rendu équivalent sur smartphone. | F6 |
+| D12 | Décompte des mots | Les élisions (« c'est », « l'été ») comptent pour un seul mot. | F5, F8 |

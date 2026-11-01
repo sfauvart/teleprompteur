@@ -276,3 +276,108 @@ test('F44 — durée cible et vitesse proposée', async ({ page }) => {
   await target.press('Enter');
   await expect(page.getByText('Durée illisible')).toBeVisible();
 });
+
+test('F56 — mise en forme Markdown', async ({ page, isMobile }) => {
+  const editor = page.locator('.cm-content');
+  await editor.click();
+  await page.keyboard.insertText('Bonjour à tous');
+  // Sélection du dernier mot puis bouton « Gras ».
+  await page.keyboard.press('End');
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Shift+ArrowLeft');
+  await page.getByRole('button', { name: 'Gras' }).click();
+  await expect(editor).toContainText('Bonjour à **tous**');
+  await page.keyboard.press('End');
+  await page.keyboard.insertText('\n\n## Partie deux\n\nTexte ==important==.\n\n- un\n- deux');
+  await expect(page.locator('.editor-stats')).toContainText('9 mots');
+
+  await openPrompter(page);
+  const text = page.locator('.prompter-text');
+  await expect(text.locator('strong')).toHaveText('tous');
+  await expect(text.locator('h2')).toHaveText('Partie deux');
+  await expect(text.locator('mark')).toHaveText('important');
+  await expect(text.locator('li')).toHaveText(['un', 'deux']);
+  await expect(text).not.toContainText('**');
+  await expect(text).not.toContainText('##');
+
+  if (!isMobile) {
+    // Saut à la section suivante (titre) : Maj+→.
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(page.getByRole('button', { name: 'Lecture', exact: true })).toBeVisible();
+    const progress = page.getByRole('slider', { name: 'Progression dans le texte' });
+    await expect(progress).not.toHaveAttribute('aria-valuenow', '0');
+  }
+});
+
+async function savePrompt(page: Page, title: string) {
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Titre').fill(title);
+  await dialog.getByRole('button', { name: 'Valider' }).click();
+  await expect(page.getByText('Prompt enregistré.').first()).toBeVisible();
+}
+
+test('F25 — reprise de lecture', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Déplacement au clavier');
+  await typeText(page, TEXT);
+  await savePrompt(page, 'Reprise');
+  await openPrompter(page);
+  await page.keyboard.press('PageDown');
+  await expect(page.getByRole('slider', { name: 'Progression dans le texte' })).not.toHaveAttribute(
+    'aria-valuenow',
+    '0',
+  );
+  await page.keyboard.press('Escape');
+  await openPrompter(page);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('Reprendre la lecture ?');
+  await dialog.getByRole('button', { name: 'Reprendre là où je m’étais arrêté' }).click();
+  await expect(page.getByRole('slider', { name: 'Progression dans le texte' })).not.toHaveAttribute(
+    'aria-valuenow',
+    '0',
+  );
+});
+
+test('F24 — export puis import avec conflit', async ({ page, isMobile }, testInfo) => {
+  test.skip(isMobile, 'Fichiers testés sur ordinateur');
+  await typeText(page, TEXT);
+  await savePrompt(page, 'Exporté');
+  await page.getByRole('link', { name: 'Mes prompts' }).click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Tout exporter' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^teleprompteur-export_\d{4}-\d{2}-\d{2}\.json$/);
+  const path = testInfo.outputPath('export.json');
+  await download.saveAs(path);
+
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Importer…' }).click();
+  await (await chooserPromise).setFiles(path);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('« Exporté » existe déjà');
+  await dialog.getByRole('button', { name: 'Garder les deux', exact: true }).click();
+  await expect(page.getByText('1 prompt importé.')).toBeVisible();
+  await expect(page.locator('.prompt-card h2')).toHaveCount(2);
+  await expect(page.locator('.prompt-card h2', { hasText: 'Exporté (copie)' })).toBeVisible();
+});
+
+test('F27 — réglages d’un prompt définis par défaut', async ({ page }) => {
+  await typeText(page, TEXT);
+  await savePrompt(page, 'Modèle');
+  await openPrompter(page);
+  if (!(await page.getByRole('switch', { name: /Miroir/ }).isVisible())) {
+    await page.getByRole('button', { name: 'Autres réglages' }).click();
+  }
+  await page.getByRole('switch', { name: /Miroir/ }).click();
+  await page.getByRole('button', { name: 'Fermer le prompteur' }).click();
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
+  await page.getByRole('link', { name: 'Mes prompts' }).click();
+  await page.getByRole('button', { name: 'Autres actions : Modèle' }).click();
+  await page.getByRole('menuitem', { name: 'Définir comme réglages par défaut' }).click();
+  await expect(page.getByText('Réglages de « Modèle » définis par défaut.')).toBeVisible();
+  await page.getByRole('link', { name: 'Préférences' }).click();
+  await expect(page.getByRole('switch', { name: 'Miroir' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+});

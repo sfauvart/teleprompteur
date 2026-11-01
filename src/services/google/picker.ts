@@ -1,3 +1,4 @@
+import { fr } from '../../i18n/fr';
 import { googleConfig } from './config';
 import { GAPI_SCRIPT, loadScript } from './scriptLoader';
 
@@ -34,7 +35,7 @@ export async function pickFile(token: string, fileId?: string): Promise<string |
       .setDeveloperKey(googleConfig.apiKey)
       .setAppId(googleConfig.appId)
       .setLocale('fr')
-      .setTitle('Ouvrir un prompt')
+      .setTitle(fr.drive.browserTitle)
       .setCallback((data) => {
         const action = data[google.picker.Response.ACTION];
         if (action === google.picker.Action.PICKED) {

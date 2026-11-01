@@ -9,8 +9,12 @@ export const SPEED_LIMITS = {
 
 export const FONT_SIZE_LIMITS = { min: 1, max: 20, step: 1, default: 10 } as const;
 
-/** Taille de police en pixels = réglage × 8 (spec fonctionnelle F6). */
-export const FONT_SIZE_PX_FACTOR = 8;
+/**
+ * Taille relative à la largeur de la colonne de texte (F6) : la police vaut
+ * `réglage / 147,2` de la largeur utile. Un même réglage donne le même nombre de caractères
+ * par ligne sur tous les écrans ; sur un écran de 1 280 px, le réglage 10 donne 80 px.
+ */
+export const FONT_SIZE_WIDTH_DIVISOR = 147.2;
 
 export const COUNTDOWN_LIMITS = { min: 0, max: 10, step: 1, default: 3 } as const;
 
@@ -41,9 +45,19 @@ export type FontKey = keyof typeof FONTS;
 
 /** Thèmes prédéfinis (F41). */
 export const THEME_PRESETS = {
-  classic: { label: 'Blanc sur noir', text: '#ffffff', background: '#000000' },
-  yellow: { label: 'Jaune sur noir', text: '#ffe14d', background: '#000000' },
-  inverse: { label: 'Noir sur blanc', text: '#000000', background: '#ffffff' },
+  classic: {
+    label: 'Blanc sur noir',
+    text: '#ffffff',
+    background: '#000000',
+    highlight: '#5c4b00',
+  },
+  yellow: { label: 'Jaune sur noir', text: '#ffe14d', background: '#000000', highlight: '#2f4a8a' },
+  inverse: {
+    label: 'Noir sur blanc',
+    text: '#000000',
+    background: '#ffffff',
+    highlight: '#ffe58a',
+  },
 } as const;
 
 export function clamp(value: number, min: number, max: number): number {
@@ -166,8 +180,9 @@ export function normalizeSettings(input: unknown): PromptSettings {
 
 export const DEFAULT_SETTINGS: PromptSettings = normalizeSettings({});
 
-export function fontSizePx(fontSize: number): number {
-  return fontSize * FONT_SIZE_PX_FACTOR;
+/** Fraction de la largeur utile de la colonne occupée par la taille de police. */
+export function fontScale(fontSize: number): number {
+  return fontSize / FONT_SIZE_WIDTH_DIVISOR;
 }
 
 /** Le texte démarre juste sous le haut de la zone de lecture (32 % → 35 % par défaut). */

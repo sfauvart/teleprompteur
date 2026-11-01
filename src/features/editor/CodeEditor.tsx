@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { EditorState } from '@codemirror/state';
+import { markdownEditing } from './markdownEditor';
 import {
   Decoration,
   EditorView,
@@ -19,6 +20,8 @@ interface CodeEditorProps {
   onLaunch(): void;
   onSave(): void;
   ariaLabel: string;
+  /** Vue CodeMirror, pour la barre de mise en forme. */
+  onView?(view: EditorView | null): void;
 }
 
 /** Indications scéniques `[…]` (F43) colorées dans l'éditeur comme dans le prompteur. */
@@ -73,6 +76,7 @@ export function CodeEditor({
   onLaunch,
   onSave,
   ariaLabel,
+  onView,
 }: CodeEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -109,13 +113,16 @@ export function CodeEditor({
           }),
           theme,
           stageDirections,
+          markdownEditing(),
           EditorView.cspNonce.of(__CSP_NONCE__),
         ],
       }),
     });
     viewRef.current = view;
+    onView?.(view);
     view.focus();
     return () => {
+      onView?.(null);
       view.destroy();
       viewRef.current = null;
     };

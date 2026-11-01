@@ -24,7 +24,7 @@ import {
   onFullscreenChange,
 } from '../../services/fullscreen';
 import { ScreenWakeLock } from '../../services/wakeLock';
-import { setLastPosition, touchLastUsed } from '../../storage/promptsRepo';
+import { getPrompt, setLastPosition, touchLastUsed } from '../../storage/promptsRepo';
 import { useSession } from '../../stores/sessionStore';
 import { choose, toast } from '../../ui/feedback';
 import { ScrollEngine, type Layout } from './engine/scrollEngine';
@@ -172,21 +172,23 @@ export function PrompterScreen() {
     if (d.promptId) void setLastPosition(d.promptId, null);
   };
 
-  // Proposition de reprise à l'ouverture.
+  // Proposition de reprise à l'ouverture (position relue en base : elle change à chaque pause).
   useEffect(() => {
-    const { draft: d, saved: s } = latest.current;
-    const position = s?.lastPosition;
-    if (!s || d.promptId !== s.id || !position || position.textHash !== hashText(d.text)) return;
-    if (position.blockIndex === 0 && position.fraction === 0) return;
+    const { draft: d } = latest.current;
+    if (!d.promptId) return;
     let cancelled = false;
-    void choose({
-      title: fr.prompter.resumeTitle,
-      message: fr.prompter.resumeMessage,
-      actions: [
-        { value: 'restart', label: fr.prompter.restart },
-        { value: 'resume', label: fr.prompter.resume, variant: 'primary' },
-      ],
-    }).then((choice) => {
+    void getPrompt(d.promptId).then(async (stored) => {
+      const position = stored?.lastPosition;
+      if (cancelled || !position || position.textHash !== hashText(d.text)) return;
+      if (position.blockIndex === 0 && position.fraction === 0) return;
+      const choice = await choose({
+        title: fr.prompter.resumeTitle,
+        message: fr.prompter.resumeMessage,
+        actions: [
+          { value: 'restart', label: fr.prompter.restart },
+          { value: 'resume', label: fr.prompter.resume, variant: 'primary' },
+        ],
+      });
       if (cancelled) return;
       if (choice === 'resume') engine.seekToAnchor(position);
       else clearPosition();
@@ -366,6 +368,15 @@ export function PrompterScreen() {
     updateSettings({ speed: convertSpeed(s.speed, unit, distance, w) });
   };
 
+  const hasAttribute = (index: number, attribute: string) =>
+    contentRef.current?.querySelector(`[data-block="${index}"]`)?.hasAttribute(attribute) ?? false;
+  const isSection = (index: number) => hasAttribute(index, 'data-section');
+  /** Sections (titres, séparateurs) ; à défaut, paragraphes (F43). */
+  const jumpSection = (direction: 1 | -1) => {
+    const hasSections = contentRef.current?.querySelector('[data-section]') !== null;
+    engine.jumpBlock(direction, hasSections ? isSection : isParagraph);
+  };
+
   const isParagraph = (index: number) =>
     contentRef.current?.querySelector(`[data-block="${index}"]`)?.hasAttribute('data-paragraph') ??
     false;
@@ -384,6 +395,7 @@ export function PrompterScreen() {
     size: (direction) => setFontSize(clampFontSize(latest.current.settings.fontSize + direction)),
     page: (direction) => engine.page(direction),
     paragraph: (direction) => engine.jumpBlock(direction, isParagraph),
+    section: jumpSection,
     stop,
     fullscreen: () => isFullscreenSupported() && toggleFullscreen(),
     mirror: () => updateSettings({ mirrorX: !latest.current.settings.mirrorX }),
@@ -474,9 +486,7 @@ export function PrompterScreen() {
         aria-label={fr.progress}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={
-          snapshot.distance > 0 ? Math.round((snapshot.position / snapshot.distance) * 100) : 0
-        }
+        aria-valuenow={0}
         tabIndex={-1}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
