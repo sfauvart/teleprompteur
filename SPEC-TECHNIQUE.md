@@ -352,7 +352,7 @@ https://www.sebastien-fauvart.fr/teleprompteur/#prompt=1.<charge utile>
 - Projet Google Cloud avec les API **Google Drive** et **Google Picker** activées.
 - Écran de consentement OAuth : type « Externe », nom « Téléprompteur », domaine autorisé `sebastien-fauvart.fr`, liens vers la page d'accueil et vers une **politique de confidentialité** (page statique `confidentialite.html` livrée avec l'application), portée unique `https://www.googleapis.com/auth/drive.file`. Cette portée n'est pas classée « sensible » : l'application peut être publiée en production sans procédure de vérification de sécurité.
 - Identifiant client OAuth de type « Application Web », origines JavaScript autorisées : `https://www.sebastien-fauvart.fr` et `http://localhost:5173` (développement).
-- Clé d'API restreinte aux référents `https://www.sebastien-fauvart.fr/teleprompteur/*` et `http://localhost:5173/*`, et aux API Drive et Picker.
+- Clé d'API restreinte aux référents `https://www.sebastien-fauvart.fr/*` et `http://localhost:5173/*`, et aux API Drive et Picker. La restriction ne peut pas porter sur le chemin `/teleprompteur/` : pour une requête vers Google, les navigateurs n'envoient que l'origine du site (`https://www.sebastien-fauvart.fr/`), et Firefox comme Safari refusent d'en envoyer davantage. Une restriction sur le chemin bloque la lecture des fichiers publics (lien `#gdrive=` sans connexion).
 - Ces trois valeurs (identifiant client, clé d'API, numéro de projet pour le Picker) sont publiques par nature (présentes dans le code du navigateur). Elles sont injectées au build par `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY` et `VITE_GOOGLE_APP_ID`. Si elles sont absentes, les fonctions Drive sont masquées.
 
 **Authentification** (`services/google/auth.ts`)

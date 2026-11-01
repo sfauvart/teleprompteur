@@ -109,6 +109,7 @@
 
 ### 4.3 Qualité et vérifications
 
+- **Clé d'API Google** : les référents autorisés doivent inclure `https://www.sebastien-fauvart.fr/*` (et non seulement `…/teleprompteur/*`), sinon un lien `#gdrive=` public exige une connexion (spec technique §6.6).
 - **Google Drive en production** : fonctionnement validé en local par le propriétaire. Reste à vérifier sur le site en ligne qu'aucune violation de CSP n'apparaît dans la console (sources Google du sélecteur notamment) et à ajuster `vite.config.ts` si besoin ; tester aussi un conflit (fichier modifié depuis un autre appareil).
 - **Écran de consentement Google** : vérifier qu'il est publié en production (sinon seuls les comptes de test peuvent se connecter).
 - **Tests sur appareils réels** : Safari iOS / iPadOS (plein écran absent, wake lock, audio M4A, feuille de partage, stockage séparé de l'app installée, fenêtre de connexion Google), Chrome Android (gestes, pincement), télécommande ou pédale Bluetooth.
