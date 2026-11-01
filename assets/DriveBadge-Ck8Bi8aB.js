@@ -1,0 +1,1 @@
+import{f as e}from"./actions-CYv1EjLL.js";import{O as t,kt as n}from"./auth-I_WD0Qxx.js";var r=t();function i({prompt:t}){if(!t.drive)return null;let i=e(t);return(0,r.jsx)(`span`,{className:`badge drive ${i?`modified`:``}`,title:i?n.drive.badgeModifiedTitle:n.drive.badgeSynced,children:i?n.drive.badgeModified:n.drive.badge})}export{i as t};
