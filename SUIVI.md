@@ -22,7 +22,7 @@
 |---|---|---|---|
 | F1 | Éditeur de texte | ✅ | CodeMirror 6, hauteur auto, compteur de mots et durée estimée en direct. Texte stocké en Markdown. |
 | F2 | Lancement du prompteur | ✅ | Bouton et Ctrl/Cmd+Entrée ; message d'erreur si texte vide. |
-| F3 | Affichage du prompteur | ✅ | Zone de lecture, triangles repères, texte démarrant juste sous le haut de la zone. Césure française automatique. |
+| F3 | Affichage du prompteur | ✅ | Zone de lecture, triangles repères, texte démarrant en bas de la zone (presque en dessous), fondu au-dessus et au-dessous de la zone (D13). Césure française automatique. |
 | F4 | Barre de contrôles | ✅ | Menu « ⋯ » pour les commandes secondaires sous 640 px. |
 | F5 | Vitesse (mots/min ou px/s) | ✅ | Conversion à rythme constant au changement d'unité, équivalent affiché, bornage et pas. |
 | F6 | Taille du texte | ✅ | Relative à la largeur de la colonne (unités `cqi`) : même nombre de caractères par ligne sur tous les écrans. Ligne en cours conservée lors du changement (ancrage par bloc) ; pincement au doigt. |

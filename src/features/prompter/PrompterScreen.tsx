@@ -6,6 +6,8 @@ import { estimateDurationSec, formatDuration, formatGap } from '../../domain/dur
 import { audioFileName } from '../../domain/filename';
 import {
   clampFontSize,
+  hexToRgba,
+  textEndRatio,
   textStartRatio,
   type PromptSettings,
   type SpeedUnit,
@@ -36,6 +38,8 @@ import { ShortcutsHelp } from './ShortcutsHelp';
 import { useShortcuts } from './useShortcuts';
 
 const BAR_AUTO_HIDE_MS = 3000;
+/** Opacité du fondu aux bords de l'écran (0 au bord de la zone de lecture). */
+const FADE_OPACITY = 0.85;
 
 /** Temps de lecture réel (hors pauses) d'une session, pour le bilan de durée (F44). */
 class PlayTimer {
@@ -132,7 +136,11 @@ export function PrompterScreen() {
   useEffect(() => engine.setSpeed(speedPx), [engine, speedPx]);
 
   const startRatio = textStartRatio(settings.readingZone);
-  useEffect(() => engine.setStartRatio(startRatio), [engine, startRatio]);
+  const endRatio = textEndRatio(settings.readingZone);
+  useEffect(() => {
+    engine.setStartRatio(startRatio);
+    engine.setEndRatio(endRatio);
+  }, [engine, startRatio, endRatio]);
 
   // Mesures : surface et contenu suivis par ResizeObserver (spec technique §7.1, §7.6).
   useLayoutEffect(() => {
@@ -452,6 +460,29 @@ export function PrompterScreen() {
             <PrompterContent text={text} lineHeight={settings.lineHeight} />
           </div>
         </div>
+        {settings.readingFade && (
+          <>
+            {/* Fondu : le texte s'estompe en s'éloignant de la zone de lecture. */}
+            <div
+              className="reading-fade"
+              aria-hidden="true"
+              style={{
+                top: 0,
+                height: `${zone.top * 100}%`,
+                background: `linear-gradient(to bottom, ${hexToRgba(theme.background, FADE_OPACITY)}, ${hexToRgba(theme.background, 0)})`,
+              }}
+            />
+            <div
+              className="reading-fade"
+              aria-hidden="true"
+              style={{
+                top: `${zone.bottom * 100}%`,
+                bottom: 0,
+                background: `linear-gradient(to top, ${hexToRgba(theme.background, FADE_OPACITY)}, ${hexToRgba(theme.background, 0)})`,
+              }}
+            />
+          </>
+        )}
         <div
           className="reading-zone"
           aria-hidden="true"

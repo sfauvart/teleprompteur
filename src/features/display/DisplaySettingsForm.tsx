@@ -12,6 +12,7 @@ import {
 } from '../../domain/settings';
 import { fr } from '../../i18n/fr';
 import { NumberStepper } from '../../ui/NumberStepper';
+import { Switch } from '../../ui/Switch';
 
 interface DisplaySettingsFormProps {
   settings: PromptSettings;
@@ -197,6 +198,15 @@ export function DisplaySettingsForm({ settings, onChange }: DisplaySettingsFormP
           }
           onChange={(opacity) => setZone(zoneTop, zoneHeight, opacity / 100)}
           suffix={fr.display.percent}
+        />
+      </div>
+
+      <div className="pref-row">
+        <span>{fr.display.fade}</span>
+        <Switch
+          checked={settings.readingFade}
+          onChange={(readingFade) => onChange({ readingFade })}
+          label={<span className="visually-hidden">{fr.display.fade}</span>}
         />
       </div>
 

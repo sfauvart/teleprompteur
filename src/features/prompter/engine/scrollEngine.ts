@@ -71,6 +71,7 @@ export class ScrollEngine {
   private content: HTMLElement | null = null;
   private progress: HTMLElement | null = null;
   private startRatio = START_RATIO;
+  private endRatio = START_RATIO;
   private frame: number | null = null;
   private lastTime: number | null = null;
   private tween: { from: number; to: number; start: number } | null = null;
@@ -131,9 +132,24 @@ export class ScrollEngine {
     this.apply();
   }
 
+  /**
+   * Ligne de fin, en fraction de la hauteur : la lecture s'arrête quand le bas du texte l'atteint
+   * (haut de la zone de lecture). Si elle est au-dessus de la ligne de départ, le texte défile
+   * d'autant plus loin que sa hauteur.
+   */
+  setEndRatio(ratio: number): void {
+    this.endRatio = ratio;
+    this.apply();
+  }
+
+  /** Distance totale de défilement : hauteur du texte + trajet de la ligne de départ à la fin. */
+  private scrollLimit(): number {
+    return this.layout.distance + Math.max(0, this.startRatio - this.endRatio) * this.surfaceHeight;
+  }
+
   /** Va à une fraction (0–1) du texte, avec animation (clic sur la barre de progression). */
   seekFraction(fraction: number): void {
-    this.seek(clamp(fraction, 0, 1) * this.layout.distance);
+    this.seek(clamp(fraction, 0, 1) * this.scrollLimit());
   }
 
   setSurfaceHeight(height: number): void {
@@ -150,7 +166,7 @@ export class ScrollEngine {
     this.layout = layout;
     this.tween = null;
     if (anchor) this.position = positionOf(layout, anchor);
-    this.position = clamp(this.position, 0, layout.distance);
+    this.position = clamp(this.position, 0, this.scrollLimit());
     if (restoring) this.afterManualMove(this.position);
     this.apply();
     this.notify(true);
@@ -214,7 +230,7 @@ export class ScrollEngine {
 
   /** Déplacement animé (Page ↑/↓, sauts de paragraphe). */
   seek(target: number): void {
-    const to = clamp(target, 0, this.layout.distance);
+    const to = clamp(target, 0, this.scrollLimit());
     this.tween = { from: this.position, to, start: this.now() };
     this.afterManualMove(to);
     this.startLoop();
@@ -234,7 +250,7 @@ export class ScrollEngine {
       for (let i = current + 1; i < tops.length; i++) {
         if (isTarget(i)) return this.seek(tops[i] ?? 0);
       }
-      return this.seek(this.layout.distance);
+      return this.seek(this.scrollLimit());
     }
     for (let i = current; i >= 0; i--) {
       const top = tops[i] ?? 0;
@@ -250,7 +266,7 @@ export class ScrollEngine {
   }
 
   private moveTo(target: number): void {
-    this.position = clamp(target, 0, this.layout.distance);
+    this.position = clamp(target, 0, this.scrollLimit());
     this.afterManualMove(this.position);
     this.apply();
     this.notify(false);
@@ -261,7 +277,7 @@ export class ScrollEngine {
     if (
       (this.state === 'idle' || this.state === 'ended') &&
       target > 0 &&
-      target < this.layout.distance
+      target < this.scrollLimit()
     ) {
       this.state = 'paused';
       this.notify(true);
@@ -298,8 +314,8 @@ export class ScrollEngine {
       this.position += (this.speed * delta) / 1000;
     }
 
-    if (this.state === 'playing' && !this.tween && this.position >= this.layout.distance) {
-      this.position = this.layout.distance;
+    if (this.state === 'playing' && !this.tween && this.position >= this.scrollLimit()) {
+      this.position = this.scrollLimit();
       this.state = 'ended';
       this.apply();
       this.lastTime = null;
@@ -320,7 +336,7 @@ export class ScrollEngine {
       this.content.style.transform = `translate3d(0, ${offset}px, 0)`;
     }
     if (this.progress) {
-      const ratio = this.layout.distance > 0 ? this.position / this.layout.distance : 0;
+      const ratio = this.scrollLimit() > 0 ? this.position / this.scrollLimit() : 0;
       this.progress.style.transform = `scaleX(${clamp(ratio, 0, 1)})`;
       this.progress.parentElement?.setAttribute(
         'aria-valuenow',

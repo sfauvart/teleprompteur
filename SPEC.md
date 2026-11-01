@@ -58,7 +58,7 @@ L'application doit être pleinement utilisable sur **ordinateur**, **tablette** 
   - un calque noir couvre toute la fenêtre ;
   - la barre de contrôles est affichée en haut ;
   - la zone de lecture est affichée ;
-  - le texte est positionné au début, sa première ligne **dans la zone de lecture** ;
+  - le texte est positionné au début, sa première ligne **en bas de la zone de lecture, presque en dessous** : elle y entre dès le début du défilement ;
   - le défilement de l'éditeur en arrière-plan est bloqué ;
   - le défilement du texte **ne démarre pas** : il faut lancer la lecture (Play).
 
@@ -70,7 +70,8 @@ L'application doit être pleinement utilisable sur **ordinateur**, **tablette** 
 - Fond noir, texte blanc, colonne de texte centrée de largeur limitée, avec marges latérales.
 - Texte non sélectionnable.
 - **Zone de lecture** : bande blanche translucide (≈ 8 % d'opacité) occupant environ 32 % à 70 % de la hauteur d'écran, avec deux **triangles repères** blancs semi-transparents sur les bords gauche et droit, centrés verticalement dans la bande.
-- À l'ouverture, la première ligne du texte se trouve à ≈ 35 % de la hauteur, soit en haut de la zone de lecture.
+- À l'ouverture, la première ligne du texte se trouve à ≈ 67 % de la hauteur, soit en bas de la zone de lecture, presque en dessous.
+- **Fondu** : au-dessus et au-dessous de la zone de lecture, le texte s'estompe progressivement vers les bords de l'écran (désactivable, cf. F41).
 
 ### F4 — Barre de contrôles
 De gauche à droite :
@@ -133,7 +134,7 @@ Destinés à l'usage avec un téléprompteur physique (lecture à travers une vi
 - **Play** : démarre ou reprend le défilement depuis la position courante.
 - **Pause** : fige le texte, le chronomètre et l'enregistrement audio.
 - **Stop** : arrête, revient au début, remet le chronomètre à zéro, termine l'enregistrement.
-- **Fin du texte** : quand la dernière ligne atteint le haut de la zone de lecture, le défilement **et l'enregistrement audio** s'arrêtent ; un indicateur « Fin » est affiché ; Play relance depuis le début.
+- **Fin du texte** : quand la dernière ligne a traversé toute la zone de lecture et en atteint le haut, le défilement **et l'enregistrement audio** s'arrêtent ; un indicateur « Fin » est affiché ; Play relance depuis le début.
 
 ### F10 — Enregistrement audio
 - Interrupteur d'activation ; demande d'autorisation micro à l'activation ; message clair en cas de refus ou de micro absent (l'interrupteur repasse alors à l'état désactivé).
@@ -268,6 +269,7 @@ Paramètres supplémentaires (sauvegardés avec le prompt, cf. F20) :
 - **Largeur de la colonne de texte** / marges latérales.
 - **Alignement** : gauche, centré.
 - **Position de la zone de lecture** (haut, centre, ou réglage libre) et opacité de la surbrillance.
+- **Fondu** autour de la zone de lecture : activé ou non (activé par défaut).
 - **Police** parmi une courte liste lisible.
 
 ### F42 — Barre de progression
@@ -405,3 +407,4 @@ Tout autre élément Markdown (liens, images, tableaux, code…) est affiché co
 | D10 | Google Drive | Enregistrement et ouverture de prompts dans Google Drive, sur action explicite. | F29, F26 |
 | D11 | Taille du texte | Relative à la largeur de la colonne de texte, pour un rendu équivalent sur smartphone. | F6 |
 | D12 | Décompte des mots | Les élisions (« c'est », « l'été ») comptent pour un seul mot. | F5, F8 |
+| D13 | Position de départ et fondu | Texte démarrant en bas de la zone de lecture ; fondu au-dessus et au-dessous de la zone. | F2, F3, F9, F41 |

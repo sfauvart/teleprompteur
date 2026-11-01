@@ -162,6 +162,8 @@ export const settingsSchema = z.preprocess(
     columnWidth: steppedNumber(COLUMN_WIDTH_LIMITS),
     align: z.enum(['left', 'center']).catch('left'),
     readingZone: readingZoneSchema,
+    /** Fondu du texte au-dessus et au-dessous de la zone de lecture. */
+    readingFade: z.boolean().catch(true),
     font: z.enum(Object.keys(FONTS) as [FontKey, ...FontKey[]]).catch('system'),
     targetDurationSec: finite
       .transform((v) =>
@@ -185,7 +187,21 @@ export function fontScale(fontSize: number): number {
   return fontSize / FONT_SIZE_WIDTH_DIVISOR;
 }
 
-/** Le texte démarre juste sous le haut de la zone de lecture (32 % → 35 % par défaut). */
+/**
+ * Ligne de départ : le texte démarre en bas de la zone de lecture, presque en dessous
+ * (70 % → 67 % par défaut), et entre dans la zone dès le début du défilement.
+ */
 export function textStartRatio(zone: PromptSettings['readingZone']): number {
-  return Math.min(zone.top + 0.03, zone.bottom);
+  return Math.max(zone.bottom - 0.03, zone.top);
+}
+
+/** Ligne de fin : la lecture s'arrête quand le bas du texte atteint le haut de la zone. */
+export function textEndRatio(zone: PromptSettings['readingZone']): number {
+  return zone.top;
+}
+
+/** `#rrggbb` → `rgba(r, g, b, alpha)`. */
+export function hexToRgba(hex: string, alpha: number): string {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
 }

@@ -921,6 +921,13 @@ select {
   color: var(--stage-color, #6cb6ff);
 }
 
+.reading-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
 .reading-zone {
   position: absolute;
   left: 0;

@@ -177,12 +177,29 @@ describe('ScrollEngine', () => {
     expect(engine.getSnapshot().state).toBe('paused');
   });
 
+  it('poursuit jusqu’à ce que le bas du texte atteigne la ligne de fin', () => {
+    const { engine, frames } = setup();
+    let ended = 0;
+    engine.onEnd(() => ended++);
+    engine.setLayout(layout([100]));
+    engine.setStartRatio(0.67);
+    engine.setEndRatio(0.32);
+    engine.setSpeed(500);
+    engine.play();
+    frames.advance(600); // 300 px parcourus : texte (100) dépassé, fin (100 + 350) pas encore
+    expect(ended).toBe(0);
+    frames.advance(1000);
+    expect(ended).toBe(1);
+    expect(engine.getPosition()).toBeCloseTo(450);
+  });
+
   it('suit la ligne de départ et met à jour la barre de progression', () => {
     const { engine, content } = setup();
     const bar = document.createElement('div');
     engine.attachProgress(bar);
     engine.setLayout(layout([1000]));
     engine.setStartRatio(0.5);
+    engine.setEndRatio(0.5); // pas de trajet final : progression = position / hauteur du texte
     expect(content.style.transform).toBe('translate3d(0, 500px, 0)');
     engine.nudge(250);
     expect(bar.style.transform).toBe('scaleX(0.25)');

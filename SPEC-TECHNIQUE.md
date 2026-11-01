@@ -407,10 +407,13 @@ C'est le composant critique. Il est **impératif et indépendant de React** (`sc
 ### 7.1 Géométrie
 
 - `H` : hauteur de la surface du prompteur (fenêtre moins la barre de contrôles si elle est affichée).
-- Ligne de départ `startY = 0,35 × H` (haut de la zone de lecture, qui s'étend de 0,32 × H à 0,70 × H).
+- Zone de lecture de `zoneTop × H` à `zoneBottom × H` (0,32 et 0,70 par défaut).
+- Ligne de départ `startY = (zoneBottom − 0,03) × H` : le texte démarre en bas de la zone, presque en dessous.
+- Ligne de fin `endY = zoneTop × H`.
 - `p` : distance défilée en pixels (nombre réel, ≥ 0).
 - Position appliquée au contenu : `transform: translate3d(0, startY − p, 0)` sur l'élément de texte, avec `will-change: transform`.
-- `D` : hauteur totale du contenu = distance à parcourir. **Fin du texte** quand `p ≥ D` (la dernière ligne atteint le haut de la zone de lecture).
+- `D` : hauteur totale du contenu. Distance à parcourir `L = D + (startY − endY)`. **Fin du texte** quand `p ≥ L` : le bas du texte atteint le haut de la zone de lecture, la dernière ligne a donc traversé toute la zone. La barre de progression vaut `p / L`.
+- **Fondu** (réglage `readingFade`, activé par défaut) : deux calques en dégradé, de la couleur de fond (opacité 0,85 au bord de l'écran) à transparent (au bord de la zone de lecture), au-dessus et au-dessous de la zone.
 - `D` et `H` sont suivis par un `ResizeObserver` (contenu et surface) : changement de taille de police, de largeur, d'orientation, chargement de police.
 
 ### 7.2 Vitesse effective

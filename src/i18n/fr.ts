@@ -222,6 +222,7 @@ export const fr = {
     zoneTop: 'Zone de lecture : position',
     zoneHeight: 'Zone de lecture : hauteur',
     zoneOpacity: 'Zone de lecture : surbrillance',
+    fade: 'Fondu autour de la zone de lecture',
     countdown: 'Compte à rebours',
     seconds: 's',
     percent: '%',
